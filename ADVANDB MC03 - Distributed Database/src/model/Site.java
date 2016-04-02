@@ -7,13 +7,13 @@ public class Site {
 	private String name;
 	private transient Socket socket;
 	private String ipAddress;
-	private ArrayList<String> connectionList;
+	private ArrayList<Site> connectionList;
 	
-	public Site(Socket socket){
-		this.name = "";
+	public Site(Socket socket, String username){
+		this.name = username;
 		this.ipAddress = "";
 		this.socket = socket;
-		connectionList = new ArrayList<String>();
+		connectionList = new ArrayList<Site>();
 	}
 	
 	public String getName() {
@@ -35,15 +35,23 @@ public class Site {
 		this.ipAddress = ipAddress;
 	}
 
-	public void addConnection(String username){
-		this.connectionList.add(username);
+	public void addConnection(Site s){
+		this.connectionList.add(s);
 	}
-	public ArrayList<String> getConnectionList() {
+	public ArrayList<Site> getConnectionList() {
 		return connectionList;
 	}
 
-	public void setConnectionList(ArrayList<String> connectionList) {
+	public void setConnectionList(ArrayList<Site> connectionList) {
 		this.connectionList = connectionList;
+	}
+	
+	public Site searchForSiteUsername(String username){
+		Site s = null;
+		int x = 0;
+		while(!connectionList.get(x).getName().equals(username)) x++;
+			s= connectionList.get(x);
+		return s;
 	}
 
 	

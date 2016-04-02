@@ -357,17 +357,17 @@ public class ClientGUI extends JFrame implements ActionListener{
 	}
 
 	
-	public void signUp(){
-		PrintWriter OUT;
-		try {
-			OUT = new PrintWriter(client.getSocket().getOutputStream());
-			OUT.println(Tags.ADD_SITE+"#"+ client.getName());
-			OUT.flush();
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-	}
+//	public void signUp(){
+//		PrintWriter OUT;
+//		try {
+//			OUT = new PrintWriter(client.getSocket().getOutputStream());
+//			OUT.println(Tags.ADD_SITE+"#"+ client.getName());
+//			OUT.flush();
+//		} catch (IOException e1) {
+//			// TODO Auto-generated catch block
+//			e1.printStackTrace();
+//		}
+//	}
 	
 	
 	public String checkIfLocalOrGlobal(){
@@ -392,8 +392,9 @@ public class ClientGUI extends JFrame implements ActionListener{
 			
 			try {
 				
-				String message = Tags.READ_REQUEST+"#"+readTextArea.getText() + "#" + checkIfLocalOrGlobal();
+				String message = readTextArea.getText() + "#" + checkIfLocalOrGlobal();
 				
+				c.sendReadRequest(message);
 				PrintWriter OUT = new PrintWriter(client.getSocket().getOutputStream());
 				OUT.println(message);
 				OUT.flush();

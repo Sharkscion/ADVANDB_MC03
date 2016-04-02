@@ -1,43 +1,32 @@
-//package model;
-//
-//public class Driver{
-//	
-//	public static void main(String args[]){
-//		//Lock lock = new Lock();
-//		
-//		ReadTransaction readT = new ReadTransaction("T1", "Central", "numbers");
-//		//readT.setLock(lock);
-//		WriteTransaction writeT = new WriteTransaction("T2", "Central", "numbers");
-//		//writeT.setLock(lock);
-//		writeT.setValue(70);
-////		WriteTransaction writeT2 = new WriteTransaction("T3", "Central", "numbers");
-////		writeT.setLock(lock);
-////		writeT.setValue(897);
-//		ReadTransaction readT2 = new ReadTransaction("T3", "Central", "numbers");
-//		//readT2.setLock(lock);
-//		
-//		Thread readThread = new Thread (readT);
-//			
-//		Thread writeThread = new Thread (writeT);
-//		
-//		Thread readThread2 = new Thread (readT2);
-//		
-//		
-//		try {
-//			
-//			writeThread.start();
-//			Thread.sleep(200);
-//			readThread.start();
-//			Thread.sleep(1000);
-//			readThread2.start();
-//			
-//		} catch (InterruptedException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//		
-//	}
-//
-//	
-// 	
-//}
+package model;
+
+import java.io.IOException;
+import java.net.Socket;
+
+import socket.Server;
+import controller.Controller;
+
+public class Driver{
+	
+	public static void main(String args[]){
+		
+		Site s;
+		try {
+			s = new Site(new Socket("",Tags.PORT), Tags.CENTRAL);
+			Controller con = new Controller(s);
+			Server server = new Server(con, Tags.PORT);
+			Thread X = new Thread();
+			X.start();
+			
+			con.add("10.2.181.70", Tags.PALAWAN);
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+
+	
+ 	
+}

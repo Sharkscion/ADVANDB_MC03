@@ -5,14 +5,19 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 
+import controller.Controller;
 import model.Site;
 
-public class Server {
+public class Server implements Runnable{
 	
 	private ArrayList<Site> clients;
+	private Controller controller;
+	private int port;
+	private static Client client;
 	
-	public Server(){
+	public Server(Controller controller, int port ){
 		clients = new ArrayList<Site>();
+		this.port = port;
 	}
 	
 	public ArrayList<Site> getClientList(){
@@ -23,22 +28,18 @@ public class Server {
 		clients.add(client);
 	}
 	
-	public static void main(String[] args) {
-		Server server = new Server();
-		ArrayList<Socket> clientList = new ArrayList<Socket>();
-		ServerSocket serverSock;
-		Socket clientSock = null;
-		
+
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		System.out.println("SERVER");
 		try{
-			serverSock = new ServerSocket(1234);
+			ServerSocket serverSock = new ServerSocket(port);
 			System.out.println("Waiting for clients..");
 			while(true){
-				clientSock = serverSock.accept();
-				clientList.add(clientSock);
-				server.addClient(new Site(clientSock));
-				
-				Thread X=new Thread(new ServerResponse(clientSock, server));
-				X.start();
+				Socket clientSock = serverSock.accept();
+				client = new Client(controller, clientSock);
+
 			}
 		}
 		catch(IOException e)
