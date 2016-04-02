@@ -1,0 +1,15 @@
+<t=T2,schema=Central,status=START>
+<t=T2,schema=Central,table_det=numbers:col:3,old=50,new=100>
+<t=T2,schema=Central,table_det=numbers:col:4,old=45,new=100>
+<t=T2,schema=Central,table_det=numbers:col:5,old=35,new=100>
+<t=T2,schema=Central,status=COMMIT>
+<t=T2,schema=Central,status=COMMIT>
+<t=T2,schema=Central,status=COMMIT>
+<t=T2,schema=Central,status=COMMIT>
+<t=T2,schema=Central,status=COMMIT>
+<t=T2,schema=Central,status=COMMIT>
+<t=T2,schema=Central,status=START>
+<t=T2,schema=Central,table_det=numbers:col:3,old=50,new=70>
+<t=T2,schema=Central,table_det=numbers:col:4,old=45,new=70>
+<t=T2,schema=Central,table_det=numbers:col:5,old=35,new=70>
+<t=T2,schema=Central,status=COMMIT>
