@@ -91,7 +91,7 @@ public class ClientResponse implements Runnable{
 	
 	private void executeReadQuery(String query){
 		
-		
+		System.out.println("QUERY: "+ query);
 	}
 
 	private void post(String substring) {

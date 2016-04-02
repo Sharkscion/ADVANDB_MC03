@@ -7,7 +7,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public abstract class Transaction implements Runnable{
+public class Transaction implements Runnable{
 	public static final int ISO_READ_UNCOMMITTED = 1;
 	public static final int ISO_READ_COMMITTED = 2;
 	public static final int ISO_REPEATABLE_READ = 3;
@@ -23,21 +23,27 @@ public abstract class Transaction implements Runnable{
 	public static final String ABORT_LOG = "ABORT";
 	
 	
-	protected String name;
-	protected int isolation_level;
-	protected PreparedStatement preparedStatement;
-	protected DBConnection dbCon;
-	protected Connection con;
-	protected BufferedWriter fWriter;
-	protected String schema;
-	protected String tableName;
+	private String name;
+	private int isolation_level;
+	private PreparedStatement preparedStatement;
+	private DBConnection dbCon;
+	private Connection con;
+	private BufferedWriter fWriter;
+	private String schema;
+	private String tableName;
+	private boolean isWrite;
+	private String protocolTag;
+	private String query;
 
-	public Transaction(String name, String schema, String tableName){
+	public Transaction(String protocolTag, String name, String schema, String tableName,String query, boolean isWrite){
 		try {
 			dbCon = new DBConnection();
 			con = dbCon.getConnection();
 			preparedStatement = null;
+			this.query = query;
+			this.protocolTag = protocolTag;
 			this.schema = schema;
+			this.isWrite = isWrite;
 			this.tableName = tableName;
 			this.name = name;
 			isolation_level = ISO_SERIALIZABLE;
@@ -78,6 +84,7 @@ public abstract class Transaction implements Runnable{
 		this.isolation_level = isolation_level;
 		
 		try {
+			con.setAutoCommit(false);
 			
 			switch(isolation_level) {
 			
@@ -105,20 +112,13 @@ public abstract class Transaction implements Runnable{
 	public void setCon(Connection con) {
 		this.con = con;
 	}
-//	public BufferedWriter getFwriter() {
-//		return fWriter;
-//	}
-//	public void setFwriter(BufferedWriter fwriter) {
-//		this.fWriter = fwriter;
-//	}
-//	
-	public void beginTransaction(boolean isWrite){
+
+	public void beginTransaction(){
 		
 		String queryLock = "";
 		System.out.println("\nBegin Transaction: " + name);
 		
 		try {
-			con.setAutoCommit(false);
 			
 			if(isWrite){
 				queryLock = "LOCK TABLES "+tableName+" WRITE;";
@@ -137,7 +137,7 @@ public abstract class Transaction implements Runnable{
 		}
 	}
 	
-	public void endTransaction(int action, boolean isWrite){
+	public void endTransaction(int action){
 		
 		System.out.println("End Transaction: " + name + "\n");
 		
@@ -179,5 +179,17 @@ public abstract class Transaction implements Runnable{
 		
 	}
 	
-	public abstract void runTransaction(Object val, int id);
+	public void runTransaction(){
+		System.out.println("HELLO");
+	}
+	
+	
+
+
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		beginTransaction();
+		runTransaction();
+	}
 }
