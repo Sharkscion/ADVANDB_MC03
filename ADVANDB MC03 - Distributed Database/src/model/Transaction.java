@@ -20,13 +20,7 @@ public abstract class Transaction implements Runnable{
 	
 	public static final String BEGIN_LOG = "START";
 	public static final String COMMIT_LOG = "COMMIT";
-	
-	public static final String STATUS_LOG = "status=";
-	public static final String TRAN_ID = "t=";
-	public static final String SCHEMA = "schema=";
-	public static final String OLD_VAL = "old=";
-	public static final String NEW_VAL = "new=";
-	public static final String TABLE_DET = "table_det=";
+	public static final String ABORT_LOG = "ABORT";
 	
 	
 	protected String name;
@@ -35,7 +29,6 @@ public abstract class Transaction implements Runnable{
 	protected DBConnection dbCon;
 	protected Connection con;
 	protected BufferedWriter fWriter;
-	protected int timeStamp;
 	protected String schema;
 	protected String tableName;
 
@@ -44,7 +37,6 @@ public abstract class Transaction implements Runnable{
 			dbCon = new DBConnection();
 			con = dbCon.getConnection();
 			preparedStatement = null;
-			timeStamp = 0;
 			this.schema = schema;
 			this.tableName = tableName;
 			this.name = name;
@@ -70,31 +62,7 @@ public abstract class Transaction implements Runnable{
 	public void setSchema(String schema) {
 		this.schema = schema;
 	}
-	
-//	public void recordToLog(int oldValue, int newValue,int id, String colName){
-//		
-//		try {
-//			fWriter.write("<"+ TRAN_ID + name + ","
-//							 + SCHEMA + schema + ","
-//					         + TABLE_DET + tableName + ":" + colName + ":" + id + ","
-//							 + OLD_VAL + oldValue + ","
-//					         + NEW_VAL + newValue + ">");
-//			fWriter.newLine();
-//			System.out.println("Recording to Log...");
-//		} catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}	
-//	}
-	
-//	public void setTimeStamp(int timeStamp){
-//		this.timeStamp = timeStamp;
-//	}
-//	
-//	public int getTimeStamp(){
-//		return this.timeStamp;
-//	}
-	
+
 	public String getName() {
 		return name;
 	}
@@ -163,14 +131,6 @@ public abstract class Transaction implements Runnable{
 			preparedStatement = con.prepareStatement("START TRANSACTION;");
 			preparedStatement.executeQuery();
 			
-//			if(isWrite){
-//				fWriter.write("<"+ TRAN_ID + name + ","
-//								 + SCHEMA + schema + ","
-//								 + STATUS_LOG + BEGIN_LOG +">");
-//				fWriter.newLine();
-//				System.out.println("Recording to Log Begin Write Transaction...");
-//			}
-		
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -184,20 +144,6 @@ public abstract class Transaction implements Runnable{
 		if(action == COMMIT){
 			try {
 				con.commit();
-//				if(isWrite){
-//					try {
-//						fWriter.write("<"+ TRAN_ID + name + ","
-//					                     + SCHEMA + schema + ","
-//								         + STATUS_LOG + COMMIT_LOG + ">");
-//						fWriter.newLine();
-//						fWriter.close();
-//						System.out.println("Recording to Log Commit Write Transaction...\n");
-//					
-//					} catch (IOException e) {
-//						// TODO Auto-generated catch block
-//						e.printStackTrace();
-//					}
-//				}
 			}  catch (SQLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

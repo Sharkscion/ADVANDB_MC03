@@ -38,11 +38,12 @@ import java.awt.event.ActionListener;
 import javax.swing.JLabel;
 
 import model.Site;
+import model.Tags;
 import socket.ClientResponse;
 
 public class ClientGUI extends JFrame implements ActionListener{
 	
-	private Socket socket;
+	private Site client;
 	private ResultSet rs;
 	private Controller c;
 	
@@ -63,7 +64,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 	public ClientGUI(Controller c, ResultSet rs, Site client, ClientResponse clientResponse) {
 		this.c = c;
 		this.rs = rs;
-		this.socket = client.getSocket();
+		this.client = client;
 		this.clientResponse = clientResponse;
 		
 		  try {
@@ -281,6 +282,18 @@ public class ClientGUI extends JFrame implements ActionListener{
 		bottomPanel.repaint();
 	}
 
+	
+	public void signUp(){
+		PrintWriter OUT;
+		try {
+			OUT = new PrintWriter(client.getSocket().getOutputStream());
+			OUT.println(Tags.ADD_SITE+"#"+ client.getName());
+			OUT.flush();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+	}
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		
@@ -288,8 +301,8 @@ public class ClientGUI extends JFrame implements ActionListener{
 			System.out.println("HELLO :/");
 			PrintWriter OUT;
 			try {
-				OUT = new PrintWriter(socket.getOutputStream());
-				OUT.println("<READ>"+readTextArea.getText());
+				OUT = new PrintWriter(client.getSocket().getOutputStream());
+				OUT.println(Tags.READ+"#"+readTextArea.getText());
 				OUT.flush();
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block

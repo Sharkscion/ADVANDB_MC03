@@ -12,6 +12,8 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
 
+import model.Tags;
+
 public class ServerResponse implements Runnable{
 	private Socket sock;
 	private Scanner INPUT;
@@ -72,18 +74,13 @@ public class ServerResponse implements Runnable{
 
 					MESSAGE = INPUT.nextLine();
 					System.out.println("Client said: " + MESSAGE);
-					String result = MESSAGE.substring(MESSAGE.indexOf("<") + 1, MESSAGE.indexOf(">"));
+					
+					String result[] = MESSAGE.split("#", 2);
 					//actions based on command
-					switch(result){
-						case "READ": printMessage(MESSAGE.substring(MESSAGE.indexOf(">") + 1)); break;
-//						case "0x002": disconnect(); break;
-//						case "0x003": checkStatus(MESSAGE.substring(5)); break;
-//						case "0x004": followPending(MESSAGE.substring(5)); break;
-//						case "0x005": unfollow(MESSAGE.substring(5)); break;
-//						case "0x006": message(MESSAGE.substring(5)); break;
-//						case "0x007": follow(MESSAGE.substring(5)); break;
-//						case "0x008": post(MESSAGE.substring(5)); break;
-//						case "0x009": filePost(MESSAGE.substring(5)); break;
+					switch(result[0]){
+						case Tags.READ : printMessage(result[1]); break;
+						case Tags.ADD_SITE: addSite(result[1]); break;
+
 						default: System.out.println("INVALID COMMAND");
 					}
 				}
@@ -97,6 +94,13 @@ public class ServerResponse implements Runnable{
 			System.out.print(X);
 		}
 		
+	}
+	
+	public void addSite(String username){
+		int x=0;
+		while(server.getClientList().get(x).getSocket()!=sock) x++;
+		server.getClientList().get(x).setName(username);
+		System.out.println(username+ "is connected!");
 	}
 	
 	private void printMessage(String message){
