@@ -10,6 +10,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.Scanner;
 
 import model.Site;
@@ -82,7 +83,7 @@ public class ServerResponse implements Runnable{
 					switch(msgClient[0]){
 						case Tags.READ_REQUEST : sendReadRequest(msgClient[1]); break;
 						case Tags.ADD_SITE : addSite(msgClient[1]); break;
-
+						case Tags.EDIT_SITE : editSite(msgClient[1]);break;
 						default: System.out.println("INVALID COMMAND");
 					}
 				}
@@ -114,9 +115,27 @@ public class ServerResponse implements Runnable{
 			s=server.getClientList().get(x);
 		return s;
 	}
-	public void addSite(String username){
+	
+	public void editSite(String username){
 		Site s = searchForSiteSocket(sock);
-		System.out.println(s.getName()+ " is connected!");
+		s.setName(username);
+		//System.out.println(username+ "is connected!");
+	}
+	public void addSite(String clientDetails){
+		
+		String details[] = clientDetails.split("#");
+		
+		try {
+			Site s = new Site(new Socket(details[0], Tags.PORT));
+			s.setName(details[1]);
+			server.addClient(s);
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}	
 	}
 	
 	private void sendReadRequest(String readRequest){

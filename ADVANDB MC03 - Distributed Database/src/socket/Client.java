@@ -14,12 +14,14 @@ public class Client {
 		Controller controller;
 		
 		try {
-			MyClient = new Socket("10.2.181.70", 1234);
+			MyClient = new Socket("192.168.56.1", 1234);
 			
 			Site client = new Site(MyClient);
 			client.setName(Tags.CENTRAL);
 			controller = new Controller(client);
 
+			controller.add("10.2.181.70", Tags.PALAWAN);
+			
 			System.out.println("CLIENT LOCAL ADDRESS: "+ MyClient.getLocalAddress().getHostName());
 			//clientGUI.setIPAdd(MyClient.getLocalAddress().getHostName());
 		}

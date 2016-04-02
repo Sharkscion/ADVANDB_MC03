@@ -20,6 +20,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
@@ -33,6 +34,7 @@ import javax.swing.border.CompoundBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 
+import net.miginfocom.swing.MigLayout;
 import model.Site;
 import model.Tags;
 import socket.ClientResponse;
@@ -60,7 +62,9 @@ public class ClientGUI extends JFrame implements ActionListener{
 	private JPanel areaPanel;
 	private JCheckBox chckbxPalawan;
 	private JCheckBox chckbxMarinduque;
+	private JPanel friendsList;
 	
+	private JScrollPane spFriendsList;
 	private boolean isPalawan;
 	private boolean isMarinduque;
 	
@@ -70,7 +74,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 		this.client = client;
 		this.clientResponse = clientResponse;
 		
-		signUp();
+//		signUp();
 		  try {
               UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
 		  }catch (Exception e) {}
@@ -150,13 +154,27 @@ public class ClientGUI extends JFrame implements ActionListener{
 	public void createTopPanel() {
 		topPanel = new JPanel();
 		topPanel.setPreferredSize(new Dimension(800, 260));
-		topPanel.setLayout(new BorderLayout());
 		topPanel.setBackground(Color.LIGHT_GRAY);
 		Border border = BorderFactory.createTitledBorder("Controls");
 		Border margin = BorderFactory.createEmptyBorder(10,10,10,10);
 		topPanel.setBorder(new CompoundBorder(border, margin));
+		topPanel.setLayout(new BorderLayout(0, 0));
 		topPanel.add(createQueryPanel(), BorderLayout.CENTER);
 		topPanel.add(createSettingsPanel(), BorderLayout.WEST);
+		topPanel.add(createConnectionListPanel(), BorderLayout.EAST);
+	}
+	
+	public JScrollPane createConnectionListPanel(){
+		friendsList = new JPanel();
+		friendsList.setBackground(Color.WHITE);
+	    friendsList.setLayout(new BorderLayout(0, 0));
+		
+	    spFriendsList = new JScrollPane();
+	    spFriendsList.setPreferredSize(new Dimension(120, 2));
+	    spFriendsList.setViewportView(friendsList);
+		friendsList.setLayout(new MigLayout("", "[]", "[]"));
+		
+		return spFriendsList;
 	}
 	
 	public JPanel createSettingsPanel(){
@@ -170,6 +188,19 @@ public class ClientGUI extends JFrame implements ActionListener{
 		 return settingsPanel;
 	}
 	
+	public void setOnline(String[] name){
+		friendsList.removeAll();
+		JLabel label;
+		for (int i = 0; i < name.length; i++) {
+			if(!name.equals(this.getName())){
+				label = new JLabel(name[i]);
+				friendsList.add(label, "newline");
+			}
+			
+		}
+		friendsList.revalidate();
+		friendsList.repaint();
+	}
 	public JPanel createAreaPanel(){
 		
 		areaPanel = new JPanel();
@@ -366,6 +397,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 				PrintWriter OUT = new PrintWriter(client.getSocket().getOutputStream());
 				OUT.println(message);
 				OUT.flush();
+				
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();

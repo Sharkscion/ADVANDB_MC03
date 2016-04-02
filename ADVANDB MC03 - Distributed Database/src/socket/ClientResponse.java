@@ -72,7 +72,7 @@ public class ClientResponse implements Runnable{
 		if(INPUT.hasNext())
 		{
 			String MESSAGE = INPUT.nextLine();
-			
+			System.out.println("MESSAGE FROM SERVER: "+ MESSAGE);
 			String msgServer[] = MESSAGE.split("#", 2);
 			
 			
@@ -85,9 +85,6 @@ public class ClientResponse implements Runnable{
 			}
 		}
 	}
-	
-	
-	
 	
 	private void executeReadQuery(String query){
 		
