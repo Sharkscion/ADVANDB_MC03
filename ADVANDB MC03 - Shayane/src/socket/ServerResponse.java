@@ -75,7 +75,7 @@ public class ServerResponse implements Runnable{
 					String result = MESSAGE.substring(MESSAGE.indexOf("<") + 1, MESSAGE.indexOf(">"));
 					//actions based on command
 					switch(result){
-						case "read": printMessage(MESSAGE.substring(MESSAGE.indexOf(">") + 1)); break;
+						case "READ": printMessage(MESSAGE.substring(MESSAGE.indexOf(">") + 1)); break;
 //						case "0x002": disconnect(); break;
 //						case "0x003": checkStatus(MESSAGE.substring(5)); break;
 //						case "0x004": followPending(MESSAGE.substring(5)); break;
@@ -90,11 +90,6 @@ public class ServerResponse implements Runnable{
 			}
 			catch(Exception ex){
 				ex.printStackTrace();
-			}
-			finally
-			{
-				System.out.println("Close");
-				sock.close();
 			}
 		}
 		catch(Exception X)

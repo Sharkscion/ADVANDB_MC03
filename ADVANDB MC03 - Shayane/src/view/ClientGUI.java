@@ -37,6 +37,7 @@ import java.awt.event.ActionListener;
 
 import javax.swing.JLabel;
 
+import model.Site;
 import socket.ClientResponse;
 
 public class ClientGUI extends JFrame implements ActionListener{
@@ -59,10 +60,10 @@ public class ClientGUI extends JFrame implements ActionListener{
 	private JPanel settingsPanel;
 	private JComboBox cbIsolationLevel;
 	
-	public ClientGUI(Controller c, ResultSet rs, Socket socket, ClientResponse clientResponse) {
+	public ClientGUI(Controller c, ResultSet rs, Site client, ClientResponse clientResponse) {
 		this.c = c;
 		this.rs = rs;
-		this.socket = socket;
+		this.socket = client.getSocket();
 		this.clientResponse = clientResponse;
 		
 		  try {
@@ -80,7 +81,7 @@ public class ClientGUI extends JFrame implements ActionListener{
         mainPanel.add(bottomPanel, BorderLayout.SOUTH);
         
         setBackground(Color.gray);
-        setSize(800, 600);
+        setSize(800, 800);
         setVisible(true);
         setResizable(false);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -130,9 +131,9 @@ public class ClientGUI extends JFrame implements ActionListener{
 	
 	public void createTopPanel() {
 		topPanel = new JPanel();
-		topPanel.setPreferredSize(new Dimension(800, 220));
+		topPanel.setPreferredSize(new Dimension(800, 260));
 		topPanel.setLayout(new BorderLayout());
-		topPanel.setBackground(Color.WHITE);
+		topPanel.setBackground(Color.GRAY);
 		Border border = BorderFactory.createTitledBorder("Controls");
 		Border margin = BorderFactory.createEmptyBorder(10,10,10,10);
 		topPanel.setBorder(new CompoundBorder(border, margin));
@@ -146,6 +147,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 	
 	public JPanel createSettingsPanel(){
 		 settingsPanel = new JPanel();
+		 settingsPanel.setBackground(Color.WHITE);
 	     settingsPanel.setLayout(new BorderLayout(0, 0));
 		
 	     settingsPanel.add(createIsolationPanel(), BorderLayout.NORTH);
@@ -157,7 +159,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 		Border border = BorderFactory.createTitledBorder("Isolation Level");
 		Border margin = BorderFactory.createEmptyBorder(10,10,10,10);
 		
-		String[] isolationLevelChoices = {"read uncommmitted", "read committed", "read repeatable"};
+		String[] isolationLevelChoices = {"Read Uncommmitted", "Read Committed", "Read Repeatable", "Serialzable"};
 		
 		isolationPanel = new JPanel();
         isolationPanel.setLayout(new BorderLayout());
@@ -203,7 +205,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 	
 	public void createBottomPanel() {
 		bottomPanel = new JPanel();
-		bottomPanel.setPreferredSize(new Dimension(800, 370));
+		bottomPanel.setPreferredSize(new Dimension(800, 480));
 		bottomPanel.setLayout(new BorderLayout());
 		Border border = BorderFactory.createTitledBorder("Dataset");
 		Border margin = BorderFactory.createEmptyBorder(10,10,10,10);
@@ -287,7 +289,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 			PrintWriter OUT;
 			try {
 				OUT = new PrintWriter(socket.getOutputStream());
-				OUT.println("<read>"+readTextArea.getText());
+				OUT.println("<READ>"+readTextArea.getText());
 				OUT.flush();
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block

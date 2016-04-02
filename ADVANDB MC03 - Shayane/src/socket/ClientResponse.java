@@ -13,6 +13,7 @@ import java.util.Scanner;
 
 import javax.swing.JOptionPane;
 
+import model.Site;
 import view.ClientGUI;
 
 public class ClientResponse implements Runnable{
@@ -22,13 +23,13 @@ public class ClientResponse implements Runnable{
 		Scanner INPUT;
 		Scanner SEND = new Scanner(System.in);
 		PrintWriter OUT;
-		ClientGUI client;
+		ClientGUI clientGUI;
 
 //-------------------------------------------------------------
-		public ClientResponse(Socket X, ClientGUI client)
+		public ClientResponse(Site site, ClientGUI clientGUI)
 		{
-			this.sock = X;
-			this.client = client;
+			this.sock = site.getSocket();
+			this.clientGUI = clientGUI;
 		}
 //-------------------------------------------------------------
 		public void run()
@@ -177,7 +178,7 @@ public class ClientResponse implements Runnable{
 			options[1] = "Message";
 			options[2] = "Cancel";
 		}
-		int n = JOptionPane.showOptionDialog(client,
+		int n = JOptionPane.showOptionDialog(clientGUI,
 			    "Meet your fellow fowl, "+text,
 			    "The Nest",
 			    JOptionPane.YES_NO_CANCEL_OPTION,
@@ -197,7 +198,7 @@ public class ClientResponse implements Runnable{
 		}
 		if(n==JOptionPane.NO_OPTION){
 			String code = JOptionPane.showInputDialog(
-			        client, 
+			        clientGUI, 
 			        "Enter your private message to "+text, 
 			        "Message", 
 			        JOptionPane.WARNING_MESSAGE
