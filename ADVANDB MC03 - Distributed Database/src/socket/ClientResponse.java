@@ -13,7 +13,9 @@ import java.util.Scanner;
 
 import javax.swing.JOptionPane;
 
+import controller.Controller;
 import model.Site;
+import model.Tags;
 import view.ClientGUI;
 
 public class ClientResponse implements Runnable{
@@ -24,12 +26,14 @@ public class ClientResponse implements Runnable{
 		Scanner SEND = new Scanner(System.in);
 		PrintWriter OUT;
 		ClientGUI clientGUI;
+		Controller c;
 
 //-------------------------------------------------------------
-		public ClientResponse(Site site, ClientGUI clientGUI)
+		public ClientResponse(Controller c)
 		{
-			this.sock = site.getSocket();
-			this.clientGUI = clientGUI;
+			this.c = c;
+			this.sock = c.getClient().getSocket();
+			this.clientGUI = c.getMainFrame();
 		}
 //-------------------------------------------------------------
 		public void run()
@@ -69,24 +73,27 @@ public class ClientResponse implements Runnable{
 		{
 			String MESSAGE = INPUT.nextLine();
 			
-			switch(MESSAGE.substring(0, 5)){
-				case "0x001": setOnline(MESSAGE.substring(5)) ; break; //update online list
-				//case "0x002": client.addNotification(MESSAGE.substring(5)); break; //add disconnection notification
-				case "0x003": selectUser(MESSAGE.substring(5)); break; //select a user
-				case "0x004": addFollowerRequest(MESSAGE.substring(5)); break; //add follower request
-				case "1x004": addRequested(MESSAGE.substring(5)); break; //add following
-				case "0x005": addUnfollowNotif(MESSAGE.substring(5)); //notify unfollowed person
-				case "1x005": addUnfollowed(MESSAGE.substring(5)); break; //notify unfollow success
-				case "0x006": message(MESSAGE.substring(5)); break; //message somebody
-				case "0x007": follow(MESSAGE.substring(5)); break; //add follower
-				case "1x007": following(MESSAGE.substring(5)); break; //add following
-				case "0x008": post(MESSAGE.substring(5)); break; //post
-				case "0x009": filePost(MESSAGE.substring(5)); break;
+			String msgServer[] = MESSAGE.split("#", 2);
+			
+			
+			switch(msgServer[0]){
+			
+				case Tags.READ_EXECUTE : executeReadQuery(msgServer[1]); break;
+		
 				
 				default: System.out.println("INVALID COMMAND");
 			}
 		}
 	}
+	
+	
+	
+	
+	private void executeReadQuery(String query){
+		
+		
+	}
+
 	private void post(String substring) {
 		String list[]=substring.split(" ");
 		String msg="";

@@ -20,11 +20,54 @@ public class Controller {
 		
 		queryFactory = new QueryFactory();
 		this.client = client;
-		clientResponse = new ClientResponse(client, mainFrame);
+		clientResponse = new ClientResponse(this);
 		mainFrame = new ClientGUI(this, queryFactory.getQuery(), client, clientResponse);
 	}
 	
 	public void getResult(){
 		mainFrame.updateTable(queryFactory.getQuery());
 	}
+	
+	public Socket getSocket() {
+		return socket;
+	}
+
+	public void setSocket(Socket socket) {
+		this.socket = socket;
+	}
+
+	public ClientGUI getMainFrame() {
+		return mainFrame;
+	}
+
+	public void setMainFrame(ClientGUI mainFrame) {
+		this.mainFrame = mainFrame;
+	}
+
+	public QueryFactory getQueryFactory() {
+		return queryFactory;
+	}
+
+	public void setQueryFactory(QueryFactory queryFactory) {
+		this.queryFactory = queryFactory;
+	}
+
+	public ClientResponse getClientResponse() {
+		return clientResponse;
+	}
+
+	public void setClientResponse(ClientResponse clientResponse) {
+		this.clientResponse = clientResponse;
+	}
+
+	public Site getClient() {
+		return client;
+	}
+
+	public void setClient(Site client) {
+		this.client = client;
+	}
+
+	
+	
 }

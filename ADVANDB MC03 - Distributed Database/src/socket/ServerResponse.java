@@ -76,11 +76,11 @@ public class ServerResponse implements Runnable{
 					MESSAGE = INPUT.nextLine();
 					System.out.println("Client said: " + MESSAGE);
 					
-					String result[] = MESSAGE.split("#", 2);
+					String msgClient[] = MESSAGE.split("#", 2);
 					//actions based on command
-					switch(result[0]){
-						case Tags.READ_REQUEST : sendReadRequest(result[1]); break;
-						case Tags.ADD_SITE : addSite(result[1]); break;
+					switch(msgClient[0]){
+						case Tags.READ_REQUEST : sendReadRequest(msgClient[1]); break;
+						case Tags.ADD_SITE : addSite(msgClient[1]); break;
 
 						default: System.out.println("INVALID COMMAND");
 					}
@@ -97,7 +97,7 @@ public class ServerResponse implements Runnable{
 		
 	}
 	
-	public Site searchForSite(Socket socket){
+	public Site searchForSiteSocket(Socket socket){
 		
 		Site s = null;
 		int x = 0;
@@ -105,256 +105,104 @@ public class ServerResponse implements Runnable{
 			server.getClientList().get(x);
 		return s;
 	}
+	
+	public Site searchForSiteUsername(String username){
+		Site s = null;
+		int x = 0;
+		while(!server.getClientList().get(x).getName().equals(username)) x++;
+			server.getClientList().get(x);
+		return s;
+	}
 	public void addSite(String username){
-		Site s = searchForSite(sock);
-		System.out.println(s.getName()+ "is connected!");
+		Site s = searchForSiteSocket(sock);
+		System.out.println(s.getName()+ " is connected!");
 	}
 	
-	private void sendReadRequest(String query){
+	private void sendReadRequest(String readRequest){
 	
-		Site s = searchForSite(sock);
-		if("Central".equals(s.getName())){
-//			Socket tempSock=server.getClientList().get(i).getSocket();
-//			PrintWriter tempOut=new PrintWriter(tempSock.getOutputStream());
-//			tempOut.println("0x008"+server.getClientList().get(a).getUsername()+" "+substring);
-//			tempOut.flush();
+		String message[] = readRequest.split("#", 2);
+		String mail = "";
+		
+		Site s = searchForSiteSocket(sock);
+		Site receiver = null;
+		Site receiver2 = null;
+		
+		boolean isBoth = false;
+		
+		if(!message[1].equals(Tags.NONE)){
+			
+			mail = Tags.READ_EXECUTE+"#"+message[0];
+			
+			switch(s.getName()){
+				case Tags.PALAWAN :
+						if(Tags.PALAWAN.equals(message[1]))
+							receiver = s;
+						else if(Tags.MARINDUQUE.equals(message[1])){
+							receiver = searchForSiteUsername(Tags.CENTRAL); 
+							if(receiver == null)
+								receiver = searchForSiteUsername(Tags.MARINDUQUE);
+						}else if (Tags.CENTRAL.equals(message[1])){
+							receiver = searchForSiteUsername(Tags.CENTRAL); 
+							if(receiver == null){
+								receiver = searchForSiteUsername(Tags.MARINDUQUE);
+								receiver2 = s;
+								isBoth = true;
+							}
+						} break;
+				
+				case Tags.MARINDUQUE :
+						if(Tags.MARINDUQUE.equals(message[1]))
+							receiver = s;
+						else if (Tags.PALAWAN.equals(message[1])){
+							receiver = searchForSiteUsername(Tags.CENTRAL);
+							if(receiver == null)
+								receiver = searchForSiteUsername(Tags.PALAWAN);
+						}else if (Tags.CENTRAL.equals(message[1])){
+							receiver = searchForSiteUsername(Tags.CENTRAL);
+							if(receiver == null){
+								receiver = searchForSiteUsername(Tags.PALAWAN);
+								receiver2 = s;
+								isBoth = true;
+							}
+						}break;
+				
+				case Tags.CENTRAL : 
+						if(Tags.CENTRAL.equals(message[1]))
+							receiver = s;
+						break;
+				default: System.out.println("WHO YOU REQUESTING TO READ QUERY......");
+			}
+			
+		}else{
+			mail = Tags.READ_EXECUTE+"#"+message[0];
+			receiver = s;
 		}
 		
-		System.out.println("MESSAGE OF CLIENT: " + query);
-	}
-//	private void post(String substring) throws IOException {
-//		int a=0;
-//		while(server.getClientList().get(a).getSocket()!=sock) a++;
-//		
-//		OUT.println("0x008"+server.getClientList().get(a).getUsername()+" "+substring);
-//		OUT.flush();
-//		for (int i = 0; i < server.getClientList().size(); i++) {
-//			if(i!=a){
-//				if(server.getClientList().get(i).isFollowing(server.getClientList().get(a).getUsername())){
-//					Socket tempSock=server.getClientList().get(i).getSocket();
-//					PrintWriter tempOut=new PrintWriter(tempSock.getOutputStream());
-//					tempOut.println("0x008"+server.getClientList().get(a).getUsername()+" "+substring);
-//					tempOut.flush();
-//				}
-//			}
-//		}
-//		
-//	}
-//	
-//	//changed
-//	private void filePost(String substring) throws IOException
-//	{
-//		int a = 0;
-//		FileOutputStream fos = null;
-//		System.out.println("substirng inside serverpresposne: " + substring);
-//		File newFile = new File(substring);
-//		
-//		while(server.getClientList().get(a).getSocket()!=sock) a++;
-//		
-//		OUT.println("0x009"+server.getClientList().get(a).getUsername()+" "+substring);
-//		OUT.flush();
-//		for (int i = 0; i < server.getClientList().size(); i++) {
-//			if(i!=a){
-//				if(server.getClientList().get(i).isFollowing(server.getClientList().get(a).getUsername()))
-//				{
-//					Socket tempSock = server.getClientList().get(i).getSocket();
-//					
-//					int count;
-//					int packetSize = 65536;
-//					byte[] buffer = new byte[packetSize];
-//					
-//					OutputStream Output = sock.getOutputStream();
-//					BufferedInputStream BuffInput = new BufferedInputStream(new FileInputStream(newFile));
-//					
-//					while ((count = BuffInput.read(buffer)) >= 0) {
-//						Output.write(buffer, 0, count);
-//					    Output.flush();
-//					}
-//					
-//					ObjectOutputStream tempOut = new ObjectOutputStream(tempSock.getOutputStream());
-//					tempOut.writeObject("0x009"+server.getClientList().get(a).getUsername()+" "+fos);
-//					tempOut.flush();
-//				}
-//			}
-//		}
-//		
-//	}
-//
-//	private void follow(String substring) throws IOException {
-//		int i=0;
-//		while(!server.getClientList().get(i).getUsername().equals(substring)) i++;
-//		
-//		int a=0;
-//		while(server.getClientList().get(a).getSocket()!=sock) a++;
-//		
-//		server.getClientList().get(a).addFollower(substring);
-//		server.getClientList().get(i).addFollowing(server.getClientList().get(a).getUsername());
-//		
-//		OUT.println("0x007"+substring);
-//		OUT.flush();
-//		
-//		Socket tempSock=server.getClientList().get(i).getSocket();
-//		PrintWriter tempOut=new PrintWriter(tempSock.getOutputStream());
-//		tempOut.println("1x007"+server.getClientList().get(a).getUsername());
-//		tempOut.flush();
-//		
-//		
-//	}
-//
-//	private void message(String substring) throws IOException {
-//		String[] list=substring.split(" ");
-//		String msg="";
-//		for (int j = 1; j < list.length; j++) {
-//			msg+=list[j]+" ";
-//		}
-//		
-//		int i=0;
-//		while(!server.getClientList().get(i).getUsername().equals(list[0])) i++;
-//		
-//		int a=0;
-//		while(server.getClientList().get(a).getSocket()!=sock) a++;
-//		
-//		OUT.println("0x006"+server.getClientList().get(a).getUsername()+" "+list[0]+" "+msg);
-//		OUT.flush();
-//		
-//		Socket tempSock=server.getClientList().get(i).getSocket();
-//		PrintWriter tempOut=new PrintWriter(tempSock.getOutputStream());
-//		tempOut.println("0x006"+server.getClientList().get(a).getUsername()+" "+list[0]+" "+msg);
-//		tempOut.flush();
-//	}
-//
-//	private void unfollow(String substring) throws IOException {
-//		int i=0;
-//		while(!server.getClientList().get(i).getUsername().equals(substring)) i++;
-//		
-//		
-//		OUT.println("1x005"+substring);
-//		OUT.flush();
-//		
-//		int a=0;
-//		while(server.getClientList().get(a).getSocket()!=sock) a++;
-//		
-//		Socket tempSock=server.getClientList().get(i).getSocket();
-//		PrintWriter tempOut=new PrintWriter(tempSock.getOutputStream());
-//		tempOut.println("0x005"+server.getClientList().get(a).getUsername());
-//		tempOut.flush();
-//		
-//		server.getClientList().get(i).remFollower(server.getClientList().get(a).getUsername());
-//		server.getClientList().get(a).remFollowing(substring);
-//	}
-//
-//	private void followPending(String substring) throws IOException {
-//		int i=0;
-//		while(!server.getClientList().get(i).getUsername().equals(substring)) i++;
-//		
-//		OUT.println("1x004"+substring);
-//		OUT.flush();
-//		
-//		int a=0;
-//		while(server.getClientList().get(a).getSocket()!=sock) a++;
-//		
-//		Socket tempSock=server.getClientList().get(i).getSocket();
-//		PrintWriter tempOut=new PrintWriter(tempSock.getOutputStream());
-//		tempOut.println("0x004"+server.getClientList().get(a).getUsername());
-//		tempOut.flush();
-//		
-//		
-//	}
-//
-//	private void checkStatus(String substring) {
-//		int i=0;
-//		while(server.getClientList().get(i).getSocket()!=sock) i++;
-//		
-//		if(server.getClientList().get(i).isFollowing(substring)){
-//			OUT.println("0x003Y"+substring);
-//			OUT.flush();
-//		}
-//		else{
-//			OUT.println("0x003N"+substring);
-//			OUT.flush();
-//		}
-//		
-//	}
-//
-//	//removes a person from the online list and sends the username of the person to all sockets
-//	public void disconnect(){
-//		String remUser;
-//		int x=0;
-//		while(server.getClientList().get(x).getSocket()!=sock) x++;
-//		
-//		remUser=server.getClientList().get(x).getUsername();
-//		//server.getClientList().remove(x);
-//
-//		
-//		for(int i=1; i<=server.getClientList().size(); i++){
-//			try{
-//				if(server.getClientList().get(i-1).getSocket().isConnected()){
-//					PrintWriter tempOut=new PrintWriter(server.getClientList().get(i-1).getSocket().getOutputStream());
-//					tempOut.println("0x002"+remUser+" has disconnected!");
-//					tempOut.flush();
-//				}
-//				
-//			}
-//			catch(IOException e){
-//				e.printStackTrace();
-//			}
-//		}
-//		updateOnline();
-//	}
-//	
-//	//sends the new list of online people to all sockets
-//	public void updateOnline(){
-//		
-//		for(int i=1; i <= server.getClientList().size(); i++){
-//			try{
-//				if(server.getClientList().get(i-1).getSocket().isConnected()){
-//					PrintWriter tempOut=new PrintWriter(server.getClientList().get(i-1).getSocket().getOutputStream());
-//					tempOut.println("0x001"+server.getClientList());
-//					tempOut.flush();
-//				}
-//			}
-//			catch(IOException ex){
-//				ex.printStackTrace();
-//			}
-//			
-//		}
-//	}
-//	
-//	//sets the username(at object Person) of the newly logged in person
-//	public void addUser(String username){
-//		int x=0;
-//		while(server.getClientList().get(x).getSocket()!=sock) x++;
-//		
-//		server.getClientList().get(x).setUsername(username);
-//
-//		updateOnline();
-//	}
+		if(!isBoth && receiver != null){
+			try {
+				PrintWriter out = new PrintWriter(receiver.getSocket().getOutputStream());
+				out.println(mail);
+				out.flush();
+			} catch (IOException e) { e.printStackTrace(); }
+		}else if(isBoth && receiver!=null && receiver2!=null){
+			/**query requesting for all information from 2 nodes since the central is down**/
+			try {
+				PrintWriter out1 = new PrintWriter(receiver.getSocket().getOutputStream());
+				PrintWriter out2 = new PrintWriter(receiver2.getSocket().getOutputStream());
+				
+				out1.println(mail);
+				out2.println(mail);
+				
+				out1.flush();
+				out2.flush();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	
-//	public void changeProfPic(){
-//
-//		FileOutputStream fos=null;
-//		File newFile= new File("C:/Users/weeza/Pictures/chirp/bird.jpg");
-//		try {
-//			fos = new FileOutputStream(newFile);
-//		} catch (FileNotFoundException e1) {
-//			e1.printStackTrace();
-//		}
-//		if(!newFile.exists()){
-//			try {
-//				newFile.createNewFile();
-//			} catch (IOException e) {
-//				e.printStackTrace();
-//			}
-//		}
-//		try{
-//			OutputStream out = sock.getOutputStream();
-//			InputStream in = sock.getInputStream();
-//			IOUtils.copy(in, fos);
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
-//		
-//	}
+		System.out.println("MESSAGE OF CLIENT: " + readRequest);
+	}
 
 }
 

@@ -3,48 +3,40 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.GridLayout;
 import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.Socket;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
+import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
-
-import controller.Controller;
-
-import javax.swing.JTabbedPane;
-import javax.swing.JTextPane;
-
-import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
-import javax.swing.JLabel;
 
 import model.Site;
 import model.Tags;
 import socket.ClientResponse;
-import java.awt.GridBagLayout;
-import java.awt.GridBagConstraints;
-import javax.swing.JCheckBox;
-import javax.swing.border.TitledBorder;
-import javax.swing.border.LineBorder;
+import controller.Controller;
 
 public class ClientGUI extends JFrame implements ActionListener{
 	
@@ -68,6 +60,9 @@ public class ClientGUI extends JFrame implements ActionListener{
 	private JPanel areaPanel;
 	private JCheckBox chckbxPalawan;
 	private JCheckBox chckbxMarinduque;
+	
+	private boolean isPalawan;
+	private boolean isMarinduque;
 	
 	public ClientGUI(Controller c, ResultSet rs, Site client, ClientResponse clientResponse) {
 		this.c = c;
@@ -162,9 +157,6 @@ public class ClientGUI extends JFrame implements ActionListener{
 		topPanel.setBorder(new CompoundBorder(border, margin));
 		topPanel.add(createQueryPanel(), BorderLayout.CENTER);
 		topPanel.add(createSettingsPanel(), BorderLayout.WEST);
-		
-		
-
 	}
 	
 	public JPanel createSettingsPanel(){
@@ -187,10 +179,34 @@ public class ClientGUI extends JFrame implements ActionListener{
 		
 		chckbxPalawan = new JCheckBox("Palawan");
 		chckbxPalawan.setBackground(Color.WHITE);
+		chckbxPalawan.addItemListener(new ItemListener() {
+			
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				// TODO Auto-generated method stub
+			   if(e.getStateChange() == ItemEvent.SELECTED) {
+		            isPalawan = true;
+		        } else {
+		        	isPalawan = false;
+		        };
+			}
+		});
 		areaPanel.add(chckbxPalawan);
 		
 		chckbxMarinduque = new JCheckBox("Marinduque");
 		chckbxMarinduque.setBackground(Color.WHITE);
+		chckbxMarinduque.addItemListener(new ItemListener() {
+			
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				// TODO Auto-generated method stub
+				if(e.getStateChange() == ItemEvent.SELECTED) {
+		            isMarinduque = true;
+		        } else {
+		        	isMarinduque = false;
+		        };
+			}
+		});
 		areaPanel.add(chckbxMarinduque, BorderLayout.NORTH);
 		return areaPanel;
 	}
@@ -321,15 +337,34 @@ public class ClientGUI extends JFrame implements ActionListener{
 			e1.printStackTrace();
 		}
 	}
+	
+	
+	public String checkIfLocalOrGlobal(){
+		
+		String result = Tags.NONE;
+		
+		if(isPalawan)
+			result = Tags.PALAWAN;
+		else if (isMarinduque)
+			result = Tags.MARINDUQUE;
+		else if (isPalawan && isMarinduque)
+			result = Tags.CENTRAL;
+		
+		return result;
+	}
+	
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		
 		if(e.getSource() == btnReadSubmit){
 			System.out.println("HELLO :/");
-			PrintWriter OUT;
+			
 			try {
-				OUT = new PrintWriter(client.getSocket().getOutputStream());
-				OUT.println(Tags.READ_REQUEST+"#"+readTextArea.getText());
+				
+				String message = Tags.READ_REQUEST+"#"+readTextArea.getText() + "#" + checkIfLocalOrGlobal();
+				
+				PrintWriter OUT = new PrintWriter(client.getSocket().getOutputStream());
+				OUT.println(message);
 				OUT.flush();
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
