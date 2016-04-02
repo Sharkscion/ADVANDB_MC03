@@ -81,7 +81,7 @@ public class ClientGUI extends JFrame implements ActionListener{
         mainPanel.add(bottomPanel, BorderLayout.SOUTH);
         
         setBackground(Color.gray);
-        setSize(800, 800);
+        setSize(800, 650);
         setVisible(true);
         setResizable(false);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -205,7 +205,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 	
 	public void createBottomPanel() {
 		bottomPanel = new JPanel();
-		bottomPanel.setPreferredSize(new Dimension(800, 480));
+		bottomPanel.setPreferredSize(new Dimension(800, 350));
 		bottomPanel.setLayout(new BorderLayout());
 		Border border = BorderFactory.createTitledBorder("Dataset");
 		Border margin = BorderFactory.createEmptyBorder(10,10,10,10);
