@@ -12,6 +12,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
 
+import model.Site;
 import model.Tags;
 
 public class ServerResponse implements Runnable{
@@ -78,8 +79,8 @@ public class ServerResponse implements Runnable{
 					String result[] = MESSAGE.split("#", 2);
 					//actions based on command
 					switch(result[0]){
-						case Tags.READ : printMessage(result[1]); break;
-						case Tags.ADD_SITE: addSite(result[1]); break;
+						case Tags.READ_REQUEST : sendReadRequest(result[1]); break;
+						case Tags.ADD_SITE : addSite(result[1]); break;
 
 						default: System.out.println("INVALID COMMAND");
 					}
@@ -96,15 +97,30 @@ public class ServerResponse implements Runnable{
 		
 	}
 	
-	public void addSite(String username){
-		int x=0;
+	public Site searchForSite(Socket socket){
+		
+		Site s = null;
+		int x = 0;
 		while(server.getClientList().get(x).getSocket()!=sock) x++;
-		server.getClientList().get(x).setName(username);
-		System.out.println(username+ "is connected!");
+			server.getClientList().get(x);
+		return s;
+	}
+	public void addSite(String username){
+		Site s = searchForSite(sock);
+		System.out.println(s.getName()+ "is connected!");
 	}
 	
-	private void printMessage(String message){
-		System.out.println("MESSAGE OF CLIENT: " + message);
+	private void sendReadRequest(String query){
+	
+		Site s = searchForSite(sock);
+		if("Central".equals(s.getName())){
+//			Socket tempSock=server.getClientList().get(i).getSocket();
+//			PrintWriter tempOut=new PrintWriter(tempSock.getOutputStream());
+//			tempOut.println("0x008"+server.getClientList().get(a).getUsername()+" "+substring);
+//			tempOut.flush();
+		}
+		
+		System.out.println("MESSAGE OF CLIENT: " + query);
 	}
 //	private void post(String substring) throws IOException {
 //		int a=0;

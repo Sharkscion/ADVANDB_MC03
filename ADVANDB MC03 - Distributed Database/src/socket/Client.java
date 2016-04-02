@@ -16,7 +16,7 @@ public class Client {
 			MyClient = new Socket("10.2.181.70", 1234);
 			
 			Site client = new Site(MyClient);
-			client.setName("Palawan");
+			client.setName("Central");
 			controller = new Controller(client);
 
 			System.out.println("CLIENT LOCAL ADDRESS: "+ MyClient.getLocalAddress().getHostName());

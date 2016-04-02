@@ -40,6 +40,11 @@ import javax.swing.JLabel;
 import model.Site;
 import model.Tags;
 import socket.ClientResponse;
+import java.awt.GridBagLayout;
+import java.awt.GridBagConstraints;
+import javax.swing.JCheckBox;
+import javax.swing.border.TitledBorder;
+import javax.swing.border.LineBorder;
 
 public class ClientGUI extends JFrame implements ActionListener{
 	
@@ -48,7 +53,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 	private Controller c;
 	
 	private JPanel topPanel, bottomPanel;
-	private JPanel queryPanel, abortCommitPanel, mainPanel, isolationPanel;
+	private JPanel queryPanel, abortCommitPanel, mainPanel, isolationPanel, buttonsPanel;
 	private JPanel writePanel, readPanel;
 	private JScrollPane readScroll, writeScroll;
 	private JTabbedPane queryTabbedPane;
@@ -60,6 +65,9 @@ public class ClientGUI extends JFrame implements ActionListener{
 	private ClientResponse clientResponse;
 	private JPanel settingsPanel;
 	private JComboBox cbIsolationLevel;
+	private JPanel areaPanel;
+	private JCheckBox chckbxPalawan;
+	private JCheckBox chckbxMarinduque;
 	
 	public ClientGUI(Controller c, ResultSet rs, Site client, ClientResponse clientResponse) {
 		this.c = c;
@@ -67,6 +75,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 		this.client = client;
 		this.clientResponse = clientResponse;
 		
+		signUp();
 		  try {
               UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
 		  }catch (Exception e) {}
@@ -77,12 +86,14 @@ public class ClientGUI extends JFrame implements ActionListener{
         
         createTopPanel();
         createBottomPanel();
-   
-        mainPanel.add(topPanel, BorderLayout.NORTH);  
+        createButtonsPanel();
+        mainPanel.add(topPanel, BorderLayout.CENTER);  
         mainPanel.add(bottomPanel, BorderLayout.SOUTH);
+        mainPanel.add(buttonsPanel, BorderLayout.NORTH);
+      
         
         setBackground(Color.gray);
-        setSize(800, 650);
+        setSize(800, 700);
         setVisible(true);
         setResizable(false);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -92,6 +103,17 @@ public class ClientGUI extends JFrame implements ActionListener{
         
         
     }
+	
+	public void createButtonsPanel(){
+		buttonsPanel = new JPanel();
+	    buttonsPanel.setBackground(Color.GRAY);
+	        
+        btnDisconnect = new JButton("DISCONNECT");
+        btnDisconnect.setBackground(Color.RED);
+        btnDisconnect.addActionListener(this);
+        buttonsPanel.setLayout(new BorderLayout(0, 0));
+        buttonsPanel.add(btnDisconnect, BorderLayout.EAST);
+	}
 	
 	public JPanel createQueryPanel(){
 	    queryPanel = new JPanel();
@@ -134,15 +156,14 @@ public class ClientGUI extends JFrame implements ActionListener{
 		topPanel = new JPanel();
 		topPanel.setPreferredSize(new Dimension(800, 260));
 		topPanel.setLayout(new BorderLayout());
-		topPanel.setBackground(Color.GRAY);
+		topPanel.setBackground(Color.LIGHT_GRAY);
 		Border border = BorderFactory.createTitledBorder("Controls");
 		Border margin = BorderFactory.createEmptyBorder(10,10,10,10);
 		topPanel.setBorder(new CompoundBorder(border, margin));
-		
-		
-		topPanel.add(createButtonsPanel(), BorderLayout.EAST);
 		topPanel.add(createQueryPanel(), BorderLayout.CENTER);
 		topPanel.add(createSettingsPanel(), BorderLayout.WEST);
+		
+		
 
 	}
 	
@@ -152,10 +173,27 @@ public class ClientGUI extends JFrame implements ActionListener{
 	     settingsPanel.setLayout(new BorderLayout(0, 0));
 		
 	     settingsPanel.add(createIsolationPanel(), BorderLayout.NORTH);
+	     settingsPanel.add(createAreaPanel(), BorderLayout.CENTER);
 	     settingsPanel.add(createAbortCommitPanel(), BorderLayout.SOUTH);
 		 return settingsPanel;
 	}
 	
+	public JPanel createAreaPanel(){
+		
+		areaPanel = new JPanel();
+		areaPanel.setBackground(Color.WHITE);
+		areaPanel.setBorder(new TitledBorder(null, "Area", TitledBorder.LEADING, TitledBorder.TOP, null, null));
+		areaPanel.setLayout(new BorderLayout(0, 0));
+		
+		chckbxPalawan = new JCheckBox("Palawan");
+		chckbxPalawan.setBackground(Color.WHITE);
+		areaPanel.add(chckbxPalawan);
+		
+		chckbxMarinduque = new JCheckBox("Marinduque");
+		chckbxMarinduque.setBackground(Color.WHITE);
+		areaPanel.add(chckbxMarinduque, BorderLayout.NORTH);
+		return areaPanel;
+	}
 	public JPanel createIsolationPanel() {
 		Border border = BorderFactory.createTitledBorder("Isolation Level");
 		Border margin = BorderFactory.createEmptyBorder(10,10,10,10);
@@ -165,7 +203,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 		isolationPanel = new JPanel();
         isolationPanel.setLayout(new BorderLayout());
         isolationPanel.setBackground(Color.WHITE);
-        isolationPanel.setBorder(new CompoundBorder(border, margin));
+        isolationPanel.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Isolation Level", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(0, 0, 0)));
         cbIsolationLevel = new JComboBox(isolationLevelChoices);
         isolationPanel.add(cbIsolationLevel, BorderLayout.NORTH);
         return isolationPanel;
@@ -179,7 +217,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 		abortCommitPanel = new JPanel();
 		abortCommitPanel.setLayout(new BorderLayout());
         abortCommitPanel.setBackground(Color.WHITE);
-        abortCommitPanel.setBorder(new CompoundBorder(border, margin));
+        abortCommitPanel.setBorder(new TitledBorder(null, "Abort or Commit", TitledBorder.LEADING, TitledBorder.TOP, null, null));
         
         rbAbort = new JRadioButton("Abort");
         rbAbort.setBackground(Color.WHITE);
@@ -192,17 +230,6 @@ public class ClientGUI extends JFrame implements ActionListener{
         return abortCommitPanel;
 	}
 	
-	public JPanel createButtonsPanel() {
-		JPanel buttonsPanel = new JPanel();
-		buttonsPanel.setBackground(Color.WHITE);
-		
-		btnDisconnect = new JButton("DISCONNECT");
-		btnDisconnect.addActionListener(this);
-		buttonsPanel.setLayout(new BorderLayout(0, 0));
-		buttonsPanel.add(btnDisconnect, BorderLayout.NORTH);
-		
-		return buttonsPanel;
-	}
 	
 	public void createBottomPanel() {
 		bottomPanel = new JPanel();
@@ -302,7 +329,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 			PrintWriter OUT;
 			try {
 				OUT = new PrintWriter(client.getSocket().getOutputStream());
-				OUT.println(Tags.READ+"#"+readTextArea.getText());
+				OUT.println(Tags.READ_REQUEST+"#"+readTextArea.getText());
 				OUT.flush();
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
