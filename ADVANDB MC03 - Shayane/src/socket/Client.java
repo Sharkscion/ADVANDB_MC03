@@ -12,7 +12,7 @@ public class Client {
 		Controller controller;
 		
 		try {
-			MyClient = new Socket("192.168.1.148", 444);
+			MyClient = new Socket("192.168.56.1", 444);
 			controller = new Controller(MyClient);
 			System.out.println("CLIENT LOCAL ADDRESS: "+ MyClient.getLocalAddress());
 			//clientGUI.setIPAdd(MyClient.getLocalAddress().getHostName());

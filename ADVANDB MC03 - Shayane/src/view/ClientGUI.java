@@ -21,6 +21,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
 import javax.swing.table.DefaultTableModel;
@@ -45,16 +46,18 @@ public class ClientGUI extends JFrame implements ActionListener{
 	private Controller c;
 	
 	private JPanel topPanel, bottomPanel;
-	private JPanel queryPanel, abortCommitPanel, mainPanel;
+	private JPanel queryPanel, abortCommitPanel, mainPanel, isolationPanel;
 	private JPanel writePanel, readPanel;
 	private JScrollPane readScroll, writeScroll;
 	private JTabbedPane queryTabbedPane;
 	private JTextArea readTextArea, writeTextArea;
-	JRadioButton rbAbort, rbCommit;
+	private JRadioButton rbAbort, rbCommit;
 	private JButton btnReadSubmit;
 	private JButton btnWriteButton;
 	private JButton btnDisconnect;
 	private ClientResponse clientResponse;
+	private JPanel settingsPanel;
+	private JComboBox cbIsolationLevel;
 	
 	public ClientGUI(Controller c, ResultSet rs, Socket socket, ClientResponse clientResponse) {
 		this.c = c;
@@ -62,13 +65,17 @@ public class ClientGUI extends JFrame implements ActionListener{
 		this.socket = socket;
 		this.clientResponse = clientResponse;
 		
+		  try {
+              UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
+		  }catch (Exception e) {}
+		  
         mainPanel = new JPanel();
         mainPanel.setLayout(new BorderLayout());
         getContentPane().add(mainPanel);
         
         createTopPanel();
         createBottomPanel();
-        
+   
         mainPanel.add(topPanel, BorderLayout.NORTH);  
         mainPanel.add(bottomPanel, BorderLayout.SOUTH);
         
@@ -86,9 +93,11 @@ public class ClientGUI extends JFrame implements ActionListener{
 	
 	public JPanel createQueryPanel(){
 	    queryPanel = new JPanel();
+	    queryPanel.setBackground(Color.WHITE);
         queryPanel.setLayout(new BorderLayout(0, 0));
         
         queryTabbedPane = new JTabbedPane(JTabbedPane.TOP);
+        queryTabbedPane.setBackground(Color.WHITE);
         queryPanel.add(queryTabbedPane, BorderLayout.CENTER);
         
         readPanel = new JPanel();
@@ -104,6 +113,7 @@ public class ClientGUI extends JFrame implements ActionListener{
         readPanel.add(btnReadSubmit);
              
         writePanel = new JPanel();
+        writePanel.setBackground(Color.WHITE);
         queryTabbedPane.addTab("Write Query", null, writePanel, null);
         writePanel.setLayout(new GridLayout(0, 1, 0, 0));
         writeTextArea = new JTextArea(writePanel.getWidth(), writePanel.getHeight());
@@ -120,59 +130,73 @@ public class ClientGUI extends JFrame implements ActionListener{
 	
 	public void createTopPanel() {
 		topPanel = new JPanel();
-		topPanel.setPreferredSize(new Dimension(800, 200));
+		topPanel.setPreferredSize(new Dimension(800, 220));
 		topPanel.setLayout(new BorderLayout());
-		topPanel.setBackground(Color.GRAY);
+		topPanel.setBackground(Color.WHITE);
 		Border border = BorderFactory.createTitledBorder("Controls");
 		Border margin = BorderFactory.createEmptyBorder(10,10,10,10);
 		topPanel.setBorder(new CompoundBorder(border, margin));
 		
-		topPanel.add(createIsolationPanel(), BorderLayout.WEST);
+		
 		topPanel.add(createButtonsPanel(), BorderLayout.EAST);
 		topPanel.add(createQueryPanel(), BorderLayout.CENTER);
+		topPanel.add(createSettingsPanel(), BorderLayout.WEST);
+
+	}
+	
+	public JPanel createSettingsPanel(){
+		 settingsPanel = new JPanel();
+	     settingsPanel.setLayout(new BorderLayout(0, 0));
+		
+	     settingsPanel.add(createIsolationPanel(), BorderLayout.NORTH);
+	     settingsPanel.add(createAbortCommitPanel(), BorderLayout.SOUTH);
+		 return settingsPanel;
 	}
 	
 	public JPanel createIsolationPanel() {
-		JPanel isolationPanel = new JPanel();
-		isolationPanel.setLayout(new BorderLayout());
-		isolationPanel.setBackground(Color.GRAY);
 		Border border = BorderFactory.createTitledBorder("Isolation Level");
 		Border margin = BorderFactory.createEmptyBorder(10,10,10,10);
-		isolationPanel.setBorder(new CompoundBorder(border, margin));
 		
 		String[] isolationLevelChoices = {"read uncommmitted", "read committed", "read repeatable"};
-		JComboBox cbIsolationLevel = new JComboBox(isolationLevelChoices);
 		
-		isolationPanel.add(cbIsolationLevel, BorderLayout.NORTH);    
-		isolationPanel.add(createAbortCommitPanel(), BorderLayout.SOUTH);
-		return isolationPanel;
+		isolationPanel = new JPanel();
+        isolationPanel.setLayout(new BorderLayout());
+        isolationPanel.setBackground(Color.WHITE);
+        isolationPanel.setBorder(new CompoundBorder(border, margin));
+        cbIsolationLevel = new JComboBox(isolationLevelChoices);
+        isolationPanel.add(cbIsolationLevel, BorderLayout.NORTH);
+        return isolationPanel;
 	}
 	
 	public JPanel createAbortCommitPanel() {
 		
 		Border border = BorderFactory.createTitledBorder("Abort or Commit");
 		Border margin = BorderFactory.createEmptyBorder(10,10,10,10);
-		abortCommitPanel = new JPanel();  
+		
+		abortCommitPanel = new JPanel();
 		abortCommitPanel.setLayout(new BorderLayout());
-		abortCommitPanel.setBackground(Color.GRAY);
-		abortCommitPanel.setBorder(new CompoundBorder(border, margin));
-		
-		rbAbort = new JRadioButton("Abort");
-		rbCommit = new JRadioButton("Commit");
-		
-		abortCommitPanel.add(rbAbort, BorderLayout.NORTH);
-		abortCommitPanel.add(rbCommit, BorderLayout.SOUTH);
-		
-		return abortCommitPanel;
+        abortCommitPanel.setBackground(Color.WHITE);
+        abortCommitPanel.setBorder(new CompoundBorder(border, margin));
+        
+        rbAbort = new JRadioButton("Abort");
+        rbAbort.setBackground(Color.WHITE);
+        rbCommit = new JRadioButton("Commit");
+        rbCommit.setBackground(Color.WHITE);
+        
+        abortCommitPanel.add(rbAbort, BorderLayout.NORTH);
+        abortCommitPanel.add(rbCommit, BorderLayout.SOUTH);
+       
+        return abortCommitPanel;
 	}
 	
 	public JPanel createButtonsPanel() {
 		JPanel buttonsPanel = new JPanel();
-		buttonsPanel.setBackground(Color.GRAY);
+		buttonsPanel.setBackground(Color.WHITE);
 		
 		btnDisconnect = new JButton("DISCONNECT");
 		btnDisconnect.addActionListener(this);
-		buttonsPanel.add(btnDisconnect);
+		buttonsPanel.setLayout(new BorderLayout(0, 0));
+		buttonsPanel.add(btnDisconnect, BorderLayout.NORTH);
 		
 		return buttonsPanel;
 	}
