@@ -23,7 +23,7 @@ public class Controller {
 		clientResponse = new ClientResponse(this);
 		mainFrame = new ClientGUI(this, queryFactory.getQuery(), client, clientResponse);
 	}
-	
+
 	public void getResult(){
 		mainFrame.updateTable(queryFactory.getQuery());
 	}

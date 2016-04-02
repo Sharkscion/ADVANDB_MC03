@@ -25,7 +25,8 @@ public class ServerResponse implements Runnable{
 	String MESSAGE = "";
 	
 	public ServerResponse(Socket sock, Server server) {
-		this.sock=sock;
+		System.out.println("SOCKET: ");
+		this.sock = sock;
 		this.server=server;
 	}
 
@@ -102,7 +103,7 @@ public class ServerResponse implements Runnable{
 		Site s = null;
 		int x = 0;
 		while(server.getClientList().get(x).getSocket()!=sock) x++;
-			server.getClientList().get(x);
+			s=server.getClientList().get(x);
 		return s;
 	}
 	
@@ -110,7 +111,7 @@ public class ServerResponse implements Runnable{
 		Site s = null;
 		int x = 0;
 		while(!server.getClientList().get(x).getName().equals(username)) x++;
-			server.getClientList().get(x);
+			s=server.getClientList().get(x);
 		return s;
 	}
 	public void addSite(String username){
