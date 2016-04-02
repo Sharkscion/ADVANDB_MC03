@@ -390,19 +390,12 @@ public class ClientGUI extends JFrame implements ActionListener{
 		if(e.getSource() == btnReadSubmit){
 			System.out.println("HELLO :/");
 			
-			try {
-				
+			
 				String message = readTextArea.getText() + "#" + checkIfLocalOrGlobal();
 				
 				c.sendReadRequest(message);
-				PrintWriter OUT = new PrintWriter(client.getSocket().getOutputStream());
-				OUT.println(message);
-				OUT.flush();
 				
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
+			
 			
 		}
 		

@@ -39,7 +39,6 @@ public class Server implements Runnable{
 			while(true){
 				Socket clientSock = serverSock.accept();
 				client = new Client(controller, clientSock);
-
 			}
 		}
 		catch(IOException e)
