@@ -16,6 +16,8 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map.Entry;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -41,7 +43,6 @@ import javax.swing.table.DefaultTableModel;
 
 import model.Site;
 import model.Tags;
-import socket.ClientResponse;
 import controller.Controller;
 
 public class ClientGUI extends JFrame implements ActionListener{
@@ -51,17 +52,15 @@ public class ClientGUI extends JFrame implements ActionListener{
 	private Controller c;
 	
 	private JPanel topPanel, bottomPanel;
-	private JPanel queryPanel, abortCommitPanel, mainPanel, isolationPanel, buttonsPanel;
+	private JPanel queryPanel, abortCommitPanel, mainPanel, isolationPanel;
 	private JPanel customPanel, defaultPanel;
 	private JPanel transactionsPanel, queryEditPanel;
 	private JScrollPane readScroll, customScroll, pane;
 	private JTabbedPane queryTabbedPane;
 	private JTextArea readTextArea, customTextArea, transactionList;
 	private JRadioButton rbAbort, rbCommit;
-	private JButton btnReadSubmit;
+	private JButton btnRead, btnWrite;
 	private JButton btnSubmitButton;
-	private JButton btnDisconnect;
-	private ClientResponse clientResponse;
 	private JPanel settingsPanel;
 	private JComboBox cbIsolationLevel, cbDefaultQueries;
 	private JPanel areaPanel;
@@ -71,9 +70,12 @@ public class ClientGUI extends JFrame implements ActionListener{
 	private boolean isPalawan;
 	private boolean isMarinduque;
 	
-	JScrollPane changeQueryScrollPane;
-	JPanel changeCenterQueryPanel;
-	JPanel changeQueryPanelArea;
+	private HashMap<String, JTextField> queryComponents;
+	private JButton btnSubmit;
+	
+	private ArrayList<String> transcationQueries = new ArrayList<String>();
+	private HashMap<String, String> whereComponents = new HashMap<String, String>();
+	private int transactionCounter = 1;
 	
 //	public ClientGUI(Controller c, ResultSet rs, Site client, ClientResponse clientResponse) {
 //		this.c = c;
@@ -95,9 +97,8 @@ public class ClientGUI extends JFrame implements ActionListener{
         createTopPanel();
         createBottomPanel();
         createButtonsPanel();
-        mainPanel.add(topPanel, BorderLayout.CENTER);  
-        mainPanel.add(bottomPanel, BorderLayout.SOUTH);
-        mainPanel.add(buttonsPanel, BorderLayout.NORTH);
+        mainPanel.add(topPanel, BorderLayout.WEST);  
+        mainPanel.add(bottomPanel, BorderLayout.EAST);
       
         setBackground(Color.gray);
         setSize(1000, 700);
@@ -110,14 +111,6 @@ public class ClientGUI extends JFrame implements ActionListener{
     }
 	
 	public void createButtonsPanel(){
-		buttonsPanel = new JPanel();
-	    buttonsPanel.setBackground(Color.GRAY);
-	        
-        btnDisconnect = new JButton("DISCONNECT");
-        btnDisconnect.setBackground(Color.RED);
-        btnDisconnect.addActionListener(this);
-        buttonsPanel.setLayout(new BorderLayout(0, 0));
-        buttonsPanel.add(btnDisconnect, BorderLayout.EAST);
 	}
 	
 	public JPanel createQueryPanel(){
@@ -138,24 +131,24 @@ public class ClientGUI extends JFrame implements ActionListener{
         queryEditPanel.setLayout(new BoxLayout(queryEditPanel, BoxLayout.PAGE_AXIS));
         pane = new JScrollPane(queryEditPanel);
         pane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-        String[] defaultQueryChoices = {"select id, aquani_vol, aquanitype from hpq_aquani",
+        String[] defaultQueryChoices = {"select hpq_hh_id, aquani_vol, aquanitype_o from hpq_aquani",
         								"select id, age_yr, occup from hpq_mem"};
         cbDefaultQueries = new JComboBox(defaultQueryChoices);
         cbDefaultQueries.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				// TODO Auto-generated method stub
-				if(cbDefaultQueries.getSelectedItem().equals("select id, aquani_vol, aquanitype from hpq_aquani")) {
+				if(cbDefaultQueries.getSelectedItem().equals("select hpq_hh_id, aquani_vol, aquanitype_o from hpq_aquani")) {
 					ArrayList<String> attributeList = new ArrayList<String>();
-					attributeList.add("Household ID");
-					attributeList.add("Fish Volume");
-					attributeList.add("Fish Type");
+					attributeList.add("Household ID: ");
+					attributeList.add("Aquani Volume: ");
+					attributeList.add("Aquani Type: ");
 				    createQueryEditPanel(attributeList);
 				} else {
 					ArrayList<String> attributeList = new ArrayList<String>();
-					attributeList.add("Household ID");
-					attributeList.add("Age");
-					attributeList.add("Occupation");
+					attributeList.add("Household ID: ");
+					attributeList.add("Age: ");
+					attributeList.add("Occupation: ");
 				    createQueryEditPanel(attributeList);
 				}
 				queryEditPanel.repaint();
@@ -167,11 +160,35 @@ public class ClientGUI extends JFrame implements ActionListener{
 			}
         });
         
+        /*************
+         * button panel for submitting read or write queries
+         *************/
         JPanel btnsPanel = new JPanel();
         btnsPanel.setBackground(Color.WHITE);
         btnsPanel.setLayout(new FlowLayout(FlowLayout.TRAILING));
-        JButton btnRead = new JButton("Read");
-        JButton btnWrite = new JButton("Write");
+        
+        btnRead = new JButton("Read");
+        btnRead.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				String que = getQuery();
+				transactionList.append(transactionCounter + ". " + "Read " + que + "\n"); 
+				transactionCounter++;
+			}
+        });
+        
+        btnWrite = new JButton("Write");
+        btnWrite.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				String que = getQuery();
+				transactionList.append(transactionCounter + ". " + "Write " + que + "\n"); 
+				transactionCounter++;
+			}
+        });
+        
         btnsPanel.add(btnRead);
         btnsPanel.add(btnWrite);
         
@@ -188,10 +205,71 @@ public class ClientGUI extends JFrame implements ActionListener{
         customScroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
         customPanel.add(customScroll);
         btnSubmitButton = new JButton("Submit");
-        btnSubmitButton.addActionListener(this);
+        btnSubmitButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				transcationQueries.clear();
+				transactionCounter = 1;
+				transactionList.removeAll();
+				transactionList.repaint();
+				transactionList.revalidate();
+				//generate table
+			}
+        });
         customPanel.add(btnSubmitButton);
         
         return queryPanel;
+	}
+	
+	public String getQuery() {
+		String query = cbDefaultQueries.getSelectedItem().toString();
+		String where = "where ";
+		String[] attributeTitles = new String[3];
+		
+		if(cbDefaultQueries.getSelectedIndex() == 0) {
+			attributeTitles[0] = "hpq_hh_id";
+			attributeTitles[1] = "aquani_vol";
+			attributeTitles[2] = "aquanitype_o";
+		} else {
+			attributeTitles[0] = "id";
+			attributeTitles[1] = "age_yr";
+			attributeTitles[2] = "occup";
+		}
+		
+		Component[] children = queryEditPanel.getComponents();
+		for(int i = 0; i < children.length; i++) {
+			JPanel panel = (JPanel) children[i];
+			Component[] panelChildren = panel.getComponents();
+			for(int j = 0; j < panelChildren.length; j++) {
+			    if(panelChildren[j] instanceof JTextField) {
+			    	String text = ((JTextField)panelChildren[j]).getText();
+			    	if(!text.isEmpty()) {
+			    		whereComponents.put(attributeTitles[i], text);
+			    	}
+			    }
+			}
+		}
+		
+		int i = 1;
+		for(Entry<String, String> entry : whereComponents.entrySet()) {
+			if(i < whereComponents.size()) {
+				where = where + entry.getKey() + " = " + entry.getValue() + " AND ";
+			} else {
+				where = where + entry.getKey() + " = " + entry.getValue() + ";";
+			}
+			i++;
+		}
+		
+		if(!where.equals("where ")) {
+			query = query + " " + where;
+			System.out.println(query);
+		}
+		
+		transcationQueries.add(query);
+		whereComponents.clear();
+		
+		return query;
 	}
 	
 	public void createQueryEditPanel(ArrayList<String> attributeList) {
@@ -213,22 +291,25 @@ public class ClientGUI extends JFrame implements ActionListener{
 	
 	public void createTopPanel() {
 		topPanel = new JPanel();
-		topPanel.setPreferredSize(new Dimension(800, 260));
+		topPanel.setPreferredSize(new Dimension(400, 260));
 		topPanel.setLayout(new BorderLayout());
 		topPanel.setBackground(Color.LIGHT_GRAY);
 		Border border = BorderFactory.createTitledBorder("Controls");
 		Border margin = BorderFactory.createEmptyBorder(10,10,10,10);
 		topPanel.setBorder(new CompoundBorder(border, margin));
-		topPanel.add(createTransactionsPanel(), BorderLayout.EAST);
+		topPanel.add(createTransactionsPanel(), BorderLayout.SOUTH);
+		
+		btnSubmit = new JButton("Submit");
+		transactionsPanel.add(btnSubmit, BorderLayout.SOUTH);
 		topPanel.add(createQueryPanel(), BorderLayout.CENTER);
-		topPanel.add(createSettingsPanel(), BorderLayout.WEST);
+		topPanel.add(createSettingsPanel(), BorderLayout.NORTH);
 	}
 	
 	public JPanel createTransactionsPanel() {
 		transactionsPanel = new JPanel();
 		transactionsPanel.setBackground(Color.WHITE);
 		transactionsPanel.setLayout(new BorderLayout());
-		transactionsPanel.setPreferredSize(new Dimension(250, 100));
+		transactionsPanel.setPreferredSize(new Dimension(250, 200));
 		transactionsPanel.setBorder(new TitledBorder(null, "Transcation List", TitledBorder.LEADING, TitledBorder.TOP, null, null));
 		
 		transactionList = new JTextArea();
@@ -411,17 +492,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 	}
 
 	
-	public void signUp(){
-		PrintWriter OUT;
-		try {
-			OUT = new PrintWriter(client.getSocket().getOutputStream());
-			OUT.println(Tags.ADD_SITE+"#"+ client.getName());
-			OUT.flush();
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-	}
+
 	
 	
 	public String checkIfLocalOrGlobal(){
@@ -430,9 +501,10 @@ public class ClientGUI extends JFrame implements ActionListener{
 		
 		if(isPalawan)
 			result = Tags.PALAWAN;
-		else if (isMarinduque)
+		if (isMarinduque)
 			result = Tags.MARINDUQUE;
-		else if (isPalawan && isMarinduque)
+		
+		if (isPalawan && isMarinduque)
 			result = Tags.CENTRAL;
 		
 		return result;
@@ -441,20 +513,8 @@ public class ClientGUI extends JFrame implements ActionListener{
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		
-		if(e.getSource() == btnReadSubmit){
-			System.out.println("HELLO :/");
+		if(e.getSource() == btnRead){
 			
-			try {
-				
-				String message = Tags.READ_REQUEST+"#"+readTextArea.getText() + "#" + checkIfLocalOrGlobal();
-				
-				PrintWriter OUT = new PrintWriter(client.getSocket().getOutputStream());
-				OUT.println(message);
-				OUT.flush();
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
 			
 		}
 		
