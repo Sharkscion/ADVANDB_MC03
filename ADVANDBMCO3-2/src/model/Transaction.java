@@ -275,7 +275,12 @@ public class Transaction implements Runnable, Subject{
 					if(Tags.NONE.equals(isBoth))
 						sendToSender(cs, sender);
 					else{
-						sendToSender(cs, sender);
+						
+						if(Tags.PALAWAN.equals(sender))
+							sendToSender(cs, Tags.MARINDUQUE);
+						else if(Tags.MARINDUQUE.equals(sender))
+							sendToSender(cs, Tags.MARINDUQUE);
+						
 						notifyQueryObservers(cs);
 					}
 		
@@ -301,6 +306,7 @@ public class Transaction implements Runnable, Subject{
 		
 		try{
 			Site s = Controller.searchForSite(sender);
+			System.out.println("TO BE SENT TO: ");
 			Socket SOCK = new Socket(s.getIpadd(),Tags.PORT);
 			String sProtocol = Tags.RESULT_SET + Tags.PROTOCOL;
 			
