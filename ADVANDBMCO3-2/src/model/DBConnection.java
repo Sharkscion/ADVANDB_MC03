@@ -19,7 +19,7 @@ public class DBConnection {
         url = "jdbc:mysql://127.0.0.1:3306/";
         database = "samplelocking";
         username = "root";
-        passwordDB = "Cs20";
+        passwordDB = "root";
 
     }
 

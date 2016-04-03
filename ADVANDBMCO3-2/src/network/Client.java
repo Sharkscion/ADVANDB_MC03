@@ -55,12 +55,15 @@ public class Client {
 			    System.out.println("HELLO");
 			    System.out.println("Client receive (continue to read bytes)");
 			    String InputCommand = new String(scannedbytes, "UTF-8");
-			    				
-			    String mailServer[] = InputCommand.split("#", 2);
-			    switch(mailServer[0]){
+			    
+			    
+			    System.out.println("INPUT COMMAND: "+InputCommand.substring(0,6).toString());			
+			    String mailServer[] = InputCommand.split("%", 2);
+			    System.out.println("MAIL SERVER PROTOCOL: "+mailServer[0]);
+			    switch(InputCommand.substring(0,6).toString()){
 			    	case Tags.RETURN_READ: 
 			    			/** query-> index 0   sender-> index 1**/
-			    			String mail[] = mailServer[1].split("#",2);
+			    			String mail[] = mailServer[1].split("%",2);
 			    			System.out.println("RECEIVED MAIL FROM--" + mail[1]);
 			    			c.RETURN_READ_EXECUTE(mail[0], mail[1]);
 			    		break;
