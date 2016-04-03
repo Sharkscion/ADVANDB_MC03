@@ -185,12 +185,12 @@ public class Controller implements Subject, QueryObserver
 								SEND_READ_TO_RECEIVER(mail, receiver, Tags.NONE);
 							}catch(Exception e){
 								
-								System.out.println(receiver.getName()+ " NOT CONNECTED!");
+								System.out.println("CENTRAL NOT CONNECTED!");
 								receiver = owner.searchConnection(Tags.MARINDUQUE);
 								try {
 									SEND_READ_TO_RECEIVER(mail, receiver, Tags.BOTH);
 								} catch (Exception e1){
-									System.out.println(receiver.getName() + " NOT CONNECTED!");
+									System.out.println("MARINDUQUE NOT CONNECTED!");
 								}
 							}
 						} break;
