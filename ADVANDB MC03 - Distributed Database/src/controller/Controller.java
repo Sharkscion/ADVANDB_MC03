@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import model.QueryFactory;
 import model.Site;
 import model.Tags;
-import socket.ClientResponse;
 import view.ClientGUI;
 
 public class Controller {
@@ -17,15 +16,13 @@ public class Controller {
 	private Socket socket;
 	private ClientGUI mainFrame;
 	private QueryFactory queryFactory;
-	private ClientResponse clientResponse;
 	private Site client;
 	
 	public Controller(Site client) {
 		
 		queryFactory = new QueryFactory();
 		this.client = client;	
-		clientResponse = new ClientResponse(this);
-		mainFrame = new ClientGUI(this, queryFactory.getQuery(), client, clientResponse);
+		mainFrame = new ClientGUI(this, queryFactory.getQuery(), client);
 	}
 
 	public void getResult(){
@@ -56,14 +53,6 @@ public class Controller {
 		this.queryFactory = queryFactory;
 	}
 
-	public ClientResponse getClientResponse() {
-		return clientResponse;
-	}
-
-	public void setClientResponse(ClientResponse clientResponse) {
-		this.clientResponse = clientResponse;
-	}
-
 	public Site getClient() {
 		return client;
 	}
@@ -73,18 +62,13 @@ public class Controller {
 	}
 	
 	public void add(String ipAddress, String username){
-		
-		try {
-			Site s = new Site(new Socket(ipAddress,Tags.PORT), username);
-			this.client.addConnection(s);
-			
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}	
+	
+		Site s = new Site(ipAddress, username);
+		this.client.addConnection(s);
+	}
+	
+	public void executeQuery(String query){
+		System.out.println("EXECUTE QUERY MYSELF: "+ query);
 	}
 	
 	public void sendReadRequest(String readRequest){
@@ -96,15 +80,17 @@ public class Controller {
 			Site receiver2 = null;
 			
 			boolean isBoth = false;
-			
+			boolean isSelf = false;
 			if(!message[1].equals(Tags.NONE)){
 				
 				mail = Tags.READ_EXECUTE+"#"+message[0];
 				
 				switch(client.getName()){
 					case Tags.PALAWAN :
-							if(Tags.PALAWAN.equals(message[1]))
-								receiver = client;
+							if(Tags.PALAWAN.equals(message[1])){
+								executeQuery(message[1]);
+								isSelf = true;
+							}
 							else if(Tags.MARINDUQUE.equals(message[1])){
 								receiver = client.searchForSiteUsername(Tags.CENTRAL); 
 								if(receiver == null)
@@ -120,7 +106,7 @@ public class Controller {
 					
 					case Tags.MARINDUQUE :
 							if(Tags.MARINDUQUE.equals(message[1]))
-								receiver = client;
+								executeQuery(message[1]);
 							else if (Tags.PALAWAN.equals(message[1])){
 								receiver = client.searchForSiteUsername(Tags.CENTRAL);
 								if(receiver == null)
@@ -136,32 +122,36 @@ public class Controller {
 					
 					case Tags.CENTRAL : 
 							if(Tags.CENTRAL.equals(message[1]))
-								receiver = client;
+								executeQuery(message[1]);
 							break;
 					default: System.out.println("WHO YOU REQUESTING TO READ QUERY......");
 				}
 				
 			}else{
 				mail = Tags.READ_EXECUTE+"#"+message[0];
-				receiver = client;
+				executeQuery(message[1]);
 			}
 			
-			if(!isBoth && receiver != null){
+			if(!isBoth && receiver != null && !isSelf){
 				try {
-					PrintWriter out = new PrintWriter(receiver.getSocket().getOutputStream());
+					
+					socket = new Socket(receiver.getIpAddress(),Tags.PORT);
+					PrintWriter out = new PrintWriter(socket.getOutputStream());
 					out.println(mail);
 					out.flush();
 				} catch (IOException e) { e.printStackTrace(); }
 			}else if(isBoth && receiver!=null && receiver2!=null){
 				/**query requesting for all information from 2 nodes since the central is down**/
 				try {
-					PrintWriter out1 = new PrintWriter(receiver.getSocket().getOutputStream());
-					PrintWriter out2 = new PrintWriter(receiver2.getSocket().getOutputStream());
 					
+					socket = new Socket(receiver.getIpAddress(), Tags.PORT);
+					PrintWriter out1 = new PrintWriter(socket.getOutputStream());
 					out1.println(mail);
-					out2.println(mail);
-					
 					out1.flush();
+					
+					socket = new Socket(receiver2.getIpAddress(), Tags.PORT);
+					PrintWriter out2 = new PrintWriter(socket.getOutputStream());
+					out2.println(mail);
 					out2.flush();
 				} catch (IOException e) {
 					// TODO Auto-generated catch block

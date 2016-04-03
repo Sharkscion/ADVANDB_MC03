@@ -5,14 +5,12 @@ import java.util.ArrayList;
 
 public class Site {
 	private String name;
-	private transient Socket socket;
 	private String ipAddress;
 	private ArrayList<Site> connectionList;
 	
-	public Site(Socket socket, String username){
+	public Site(String ipAddress, String username){
 		this.name = username;
-		this.ipAddress = "";
-		this.socket = socket;
+		this.ipAddress = ipAddress;
 		connectionList = new ArrayList<Site>();
 	}
 	
@@ -22,12 +20,7 @@ public class Site {
 	public void setName(String name) {
 		this.name = name;
 	}
-	public Socket getSocket() {
-		return socket;
-	}
-	public void setSocket(Socket socket) {
-		this.socket = socket;
-	}
+	
 	public String getIpAddress() {
 		return ipAddress;
 	}

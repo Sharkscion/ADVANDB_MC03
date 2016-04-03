@@ -37,7 +37,6 @@ import javax.swing.table.DefaultTableModel;
 import net.miginfocom.swing.MigLayout;
 import model.Site;
 import model.Tags;
-import socket.ClientResponse;
 import controller.Controller;
 
 public class ClientGUI extends JFrame implements ActionListener{
@@ -56,7 +55,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 	private JButton btnReadSubmit;
 	private JButton btnWriteButton;
 	private JButton btnDisconnect;
-	private ClientResponse clientResponse;
+	//private ClientResponse clientResponse;
 	private JPanel settingsPanel;
 	private JComboBox cbIsolationLevel;
 	private JPanel areaPanel;
@@ -68,11 +67,10 @@ public class ClientGUI extends JFrame implements ActionListener{
 	private boolean isPalawan;
 	private boolean isMarinduque;
 	
-	public ClientGUI(Controller c, ResultSet rs, Site client, ClientResponse clientResponse) {
+	public ClientGUI(Controller c, ResultSet rs, Site client) {
 		this.c = c;
 		this.rs = rs;
 		this.client = client;
-		this.clientResponse = clientResponse;
 		
 //		signUp();
 		  try {

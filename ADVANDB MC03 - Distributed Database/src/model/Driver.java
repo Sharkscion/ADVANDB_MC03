@@ -12,14 +12,12 @@ public class Driver{
 		
 		Site s;
 		
-			s = new Site(null, Tags.CENTRAL);
+			s = new Site("192.168.1.140", Tags.CENTRAL);
 			Controller con = new Controller(s);
+			con.add("192.168.1.138", Tags.PALAWAN);
 			Server server = new Server(con, Tags.PORT);
 			Thread X = new Thread();
-			X.start();
-			
-			con.add("10.2.181.70", Tags.PALAWAN);
-			
+			X.start();			
 	}
 
 	
