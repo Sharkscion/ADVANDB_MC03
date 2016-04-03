@@ -238,7 +238,7 @@ public class Controller implements Subject, QueryObserver
 	public void updateResultSet(CachedRowSetImpl rs) {
 		System.out.println("FINISH EXECUTING QUERY READ REQUEST");
 		System.out.println("SETTING RESULT SET");
-		rsList.add(t.getCachedRowSetImpl());
+		rsList.add(rs);
 	}
 	
 	public static Site searchForSite(String username){

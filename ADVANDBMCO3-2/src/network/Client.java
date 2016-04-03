@@ -57,7 +57,7 @@ public class Client {
 			    String InputCommand = new String(scannedbytes, "UTF-8");
 			    
 			    
-			    System.out.println("INPUT COMMAND: "+InputCommand.substring(0,6).toString());			
+			    System.out.println("INPUT COMMAND: "+InputCommand);			
 			    String mailServer[] = InputCommand.split(Tags.PROTOCOL, 2);
 			    System.out.println("MAIL SERVER PROTOCOL: "+mailServer[0]);
 			    switch(mailServer[0].trim()){
@@ -69,7 +69,9 @@ public class Client {
 			    		break;
 			    	case Tags.RESULT_SET:
 			    			System.out.println("PASOK RESULT SET");
-			    			c.RECEIVE_RESULT_SET(Arrays.copyOfRange(scannedbytes, mailServer[0].getBytes().length, mailServer[0].getBytes().length - mailServer[1].getBytes().length));
+			    			int from = InputCommand.substring(0,6).getBytes().length;
+			    			int to = InputCommand.getBytes().length - from;
+			    			c.RECEIVE_RESULT_SET(Arrays.copyOfRange(scannedbytes, from, to));
 			    			break;
 			    	default: System.out.println("PROTOCOL NOT RECOGNIZED!");
 			    }

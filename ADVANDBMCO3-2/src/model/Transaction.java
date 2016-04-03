@@ -273,7 +273,7 @@ public class Transaction implements Runnable, Subject{
 					System.out.println("SNAME: "+s.getName());
 					try{
 						Socket SOCK = new Socket(s.getIpadd(),Tags.PORT);
-						String sProtocol = Tags.RESULT_SET.getBytes() + Tags.PROTOCOL;
+						String sProtocol = Tags.RESULT_SET + Tags.PROTOCOL;
 						
 						OutputStream tempOut = SOCK.getOutputStream();
 					 	byte[] protocol = sProtocol.getBytes();
