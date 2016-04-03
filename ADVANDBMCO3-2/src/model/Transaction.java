@@ -43,6 +43,8 @@ import javax.sql.rowset.RowSetWarning;
 import javax.sql.rowset.spi.SyncProvider;
 import javax.sql.rowset.spi.SyncProviderException;
 
+import com.sun.rowset.CachedRowSetImpl;
+
 import controller.Controller;
 
 public class Transaction implements Runnable, Subject{
@@ -74,7 +76,7 @@ public class Transaction implements Runnable, Subject{
 	private String query;
 	private String sender;
 	private ArrayList<QueryObserver> obList;
-	
+	private CachedRowSetImpl cs;
 	private ResultSet rs;
 
 	
@@ -85,6 +87,7 @@ public class Transaction implements Runnable, Subject{
 		preparedStatement = null;
 		obList = new ArrayList<QueryObserver>();
 		rs = null;
+		cs =null;
 		this.query = query;
 		this.protocolTag = protocolTag;
 		this.schema = schema;
@@ -100,6 +103,7 @@ public class Transaction implements Runnable, Subject{
 		preparedStatement = null;
 		obList = new ArrayList<QueryObserver>();
 		rs = null;
+		cs = null;
 		this.sender = sender;
 		this.query = query;
 		isolation_level = ISO_SERIALIZABLE;
@@ -129,6 +133,15 @@ public class Transaction implements Runnable, Subject{
 	public int getIsolation_level() {
 		return isolation_level;
 	}
+	
+	public CachedRowSetImpl getCachedRowSetImpl(){
+		return this.cs;
+	}
+	
+	public void setCachedRowSetImpl(CachedRowSetImpl cs){
+		this.cs = cs;
+	}
+	
 	public void setIsolation_level(int isolation_level) {
 		
 		System.out.println("Setting isolation level for Transaction "+name+" to: " + isolation_level);
@@ -245,34 +258,39 @@ public class Transaction implements Runnable, Subject{
 				
 				preparedStatement = con.prepareStatement(query);
 				rs = preparedStatement.executeQuery();				
+				cs = new CachedRowSetImpl();
+				cs.populate(rs);
+				while(true){
+					if(cs!=null)
+						break;
+				}
+				
 				System.out.println("SENDER: "+sender);
 				if(!Tags.NONE.equals(sender)){
-					
-					System.out.println("HELO");
-					
-					CustomResultSet crs = new CustomResultSet(rs);
-					System.out.println("HI? " + Controller.owner.getName());
-					Site s = Controller.owner.searchConnection(sender);
+					Site s = Controller.searchForSite(sender);
 					System.out.println("SNAME: "+s.getName());
 					try{
 						Socket SOCK = new Socket(s.getIpadd(),Tags.PORT);
 						ObjectOutputStream tempOut = new ObjectOutputStream(SOCK.getOutputStream());
 					 	byte[] protocol = Tags.RESULT_SET.getBytes();
-					 	byte[] object = Controller.serialize(crs);
+					 	byte[] object = Controller.serialize(cs);
 					 	byte[] mail = Controller.byteConcat(protocol, object);
+					 	System.out.println("PASOK SENDING AIL BYTE");
 						tempOut.writeObject(mail);
 						tempOut.flush();
-						
+						System.out.println("FINISH SENDING");
 					}catch(Exception e){
+						e.printStackTrace();
 						System.out.println("FAILED TO SEND RESULT SET TO : "+ sender);
 					}
 					
 				}else				
-					notifyQueryObservers(rs);
+					notifyQueryObservers(cs);
 			}
 			
 		}catch(Exception e){
-			System.out.println("ERROR IN EXECUTING QUERY!");
+			System.out.println("ERROR IN EXECUTING QUERY!: " );
+			e.printStackTrace();
 		}
 	}
 	
@@ -281,7 +299,7 @@ public class Transaction implements Runnable, Subject{
 		// TODO Auto-generated method stub
 		beginTransaction();
 		runTransaction();
-		//endTransaction(Transaction.COMMIT);
+		endTransaction(Transaction.COMMIT);
 	}
 
 	@Override
@@ -306,7 +324,7 @@ public class Transaction implements Runnable, Subject{
 	}
 	
 	@Override
-	public void notifyQueryObservers(ResultSet rs) {
+	public void notifyQueryObservers(CachedRowSetImpl rs) {
 		// TODO Auto-generated method stub
 		for(QueryObserver o: obList)
 			o.updateResultSet(rs);

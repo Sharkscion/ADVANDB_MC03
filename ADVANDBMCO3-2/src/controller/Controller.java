@@ -4,6 +4,7 @@ import java.awt.FlowLayout;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
@@ -20,6 +21,9 @@ import java.util.concurrent.CyclicBarrier;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import com.mysql.jdbc.CachedResultSetMetaData;
+import com.sun.rowset.CachedRowSetImpl;
+
 import model.CustomResultSet;
 import model.Observer;
 import model.QueryObserver;
@@ -34,12 +38,12 @@ public class Controller implements Subject, QueryObserver
 	// database manager?
 	
 	private ArrayList<Observer> obList;
-	public static Site owner;
+	private static Site owner;
 	private Socket SOCK;
 	private PrintWriter OUT;
 	private ResultSets rs;
 	private Transaction t;
-	private ArrayList<ResultSet> rsList;
+	private ArrayList<CachedRowSetImpl> rsList;
 	
 	public Controller(Site owner)
 	{
@@ -62,6 +66,7 @@ public class Controller implements Subject, QueryObserver
 	public void add(String ip, String name)
 	{
 		Site newSite = new Site(ip,name);
+		System.out.println("NEW SITE: "+ newSite.getName());
 		owner.addConnection(newSite);
 	}
 	
@@ -99,8 +104,8 @@ public class Controller implements Subject, QueryObserver
 		
 	public void RETURN_READ_EXECUTE(String query , String sender){
 		
-		System.out.println("RECEIVED READ REQUEST FROM : " +sender);
-		t = new Transaction(query, sender);
+		System.out.println("RECEIVED READ REQUEST FROM$$: " +sender+"%%#");
+		t = new Transaction(query, sender.trim());
 		t.registerObserver(this);
 		t.setTableName("numbers");
 		t.setIsolation_level(Transaction.ISO_SERIALIZABLE);
@@ -111,11 +116,20 @@ public class Controller implements Subject, QueryObserver
 	
 	public void RECEIVE_RESULT_SET(byte[] resultset){
 		try {
-			CustomResultSet crs = (CustomResultSet) deserialize(resultset);
-			if(crs == null)
+			
+			byte[] mybytearray = new byte[65500];							// Creates a byte array
+			InputStream is = new ByteArrayInputStream(resultset);				// Creates an input stream from the given bytes
+			int bytesRead = is.read(mybytearray, 0, mybytearray.length);	// Reads bytes from bytes to mybytearray and stores number of bytes read
+			
+			
+			System.out.println("writeFile (bytes received: " + bytesRead + ")");
+		
+			CachedRowSetImpl cas = (CachedRowSetImpl) deserialize(mybytearray);
+			
+			if(cas == null)
 				System.out.println("NULL SI CRS :(");
 			else{
-				updateResultSet(crs.getRs());
+				updateResultSet(cas);
 				notifyObservers();
 			}
 				
@@ -130,6 +144,7 @@ public class Controller implements Subject, QueryObserver
 	
 	public void SEND_READ_TO_RECEIVER(String mail, Site receiver) throws UnknownHostException, IOException{
 			//System.out.println("");
+			
 			SOCK = new Socket(receiver.getIpadd(), Tags.PORT);
 			OUT = new PrintWriter(SOCK.getOutputStream());
 			OUT.println(mail);
@@ -142,7 +157,7 @@ public class Controller implements Subject, QueryObserver
 	// second# -> area
 	public void SEND_READ_REQUEST(String readRequest)
 	{
-		rsList = new ArrayList<ResultSet>();
+		rsList = new ArrayList<CachedRowSetImpl>();
 		
 		System.out.println("==STARTING READ REQUEST==");
 		Site receiver = null;
@@ -153,7 +168,7 @@ public class Controller implements Subject, QueryObserver
 			
 			//mailExecute = Tags.EXECUTE_READ+"#"+message[0]+"#"+
 			mail = Tags.RETURN_READ+"#"+message[0]+"#" + owner.getName();
-			
+			System.out.println(mail + "<-MAIL");
 			switch(owner.getName()){
 				case Tags.CENTRAL: 
 						if(Tags.CENTRAL.equals(message[1]))
@@ -223,15 +238,20 @@ public class Controller implements Subject, QueryObserver
 	}
 
 	@Override
-	public void notifyQueryObservers(ResultSet rs) {
+	public void notifyQueryObservers(CachedRowSetImpl rs) {
 		// TODO Auto-generated method stub		
 		updateResultSet(rs);
 	}
 
 	@Override
-	public void updateResultSet(ResultSet rs) {
+	public void updateResultSet(CachedRowSetImpl rs) {
 		System.out.println("FINISH EXECUTING QUERY READ REQUEST");
 		System.out.println("SETTING RESULT SET");
-		rsList.add(t.getResultSet());
+		rsList.add(t.getCachedRowSetImpl());
+	}
+	
+	public static Site searchForSite(String username){
+		return owner.searchConnection(username);
+		
 	}
 }

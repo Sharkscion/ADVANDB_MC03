@@ -1,8 +1,9 @@
 package model;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class Site {
+public class Site implements Serializable{
 	private String ipadd;
 	private String name;
 	
@@ -47,17 +48,18 @@ public class Site {
 	public Site searchConnection(String username){
 		
 		Site s = null;
-	//	System.out.println("LOOB NI  "+ username);
-		int x = 0;
+		//int x = 0;
+		if(Tags.PALAWAN.equals(username))
+			System.out.println("HELLO?");
 		
-		//System.out.println("CONNECT ZISE:" + connectionList.size());
-		while(!connectionList.get(x).getName().equals(username)){ 
-			//System.out.println("S " +connectionList.get(x));
-			x++;
+		System.out.println("USERNAE:"+ username + "#");
+		for(int x = 0; x <connectionList.size(); x++){	
+			System.out.println(x + " " +connectionList.get(x).getName());
+			if(connectionList.get(x).getName().equalsIgnoreCase(username)) {
+				System.out.println("PASOk");
+				s = connectionList.get(x);
+			}
 		}
-		
-		s = connectionList.get(x);
-		
 		return s;
 	}
 	

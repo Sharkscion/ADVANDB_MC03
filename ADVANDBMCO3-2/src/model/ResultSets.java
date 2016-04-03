@@ -6,13 +6,15 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
+import com.sun.rowset.CachedRowSetImpl;
+
 public class ResultSets implements Serializable {
 	
-	private ArrayList<ResultSet> rsList;
-	private ResultSet current;
+	private ArrayList<CachedRowSetImpl> rsList;
+	private CachedRowSetImpl current;
 	
-	 public ResultSets(ArrayList<ResultSet> rsList) {
-         this.rsList = new ArrayList<ResultSet>(rsList);
+	 public ResultSets(ArrayList<CachedRowSetImpl> rsList) {
+         this.rsList = new ArrayList<CachedRowSetImpl>(rsList);
          if(rsList.size()> 1)
         	 current = rsList.remove(0);
          else
@@ -21,12 +23,15 @@ public class ResultSets implements Serializable {
 	 
 	 public boolean next() {
        try {
-			if (current.next()) {
-		       return true;
-		   }else if (!rsList.isEmpty()) {
-		       current = rsList.remove(0);
-		       return next();
-		   }
+    	   if(!current.isLast()){
+    		   if (current.next()) {
+    		       return true;
+    		   }else if (!rsList.isEmpty()) {
+    		       current = rsList.remove(0);
+    		       return next();
+    		   }
+    	   }
+			
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
