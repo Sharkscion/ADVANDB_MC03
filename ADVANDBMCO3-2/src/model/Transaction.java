@@ -1,10 +1,12 @@
 package model;
 
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -272,13 +274,17 @@ public class Transaction implements Runnable, Subject{
 					try{
 						Socket SOCK = new Socket(s.getIpadd(),Tags.PORT);
 						String sProtocol = Tags.RESULT_SET.getBytes() + Tags.PROTOCOL;
-						ObjectOutputStream tempOut = new ObjectOutputStream(SOCK.getOutputStream());
+						
+						OutputStream tempOut = SOCK.getOutputStream();
 					 	byte[] protocol = sProtocol.getBytes();
 					 	byte[] object = Controller.serialize(cs);
 					 	byte[] mail = Controller.byteConcat(protocol, object);
-					 	System.out.println("PASOK SENDING AIL BYTE");
-						tempOut.writeObject(mail);
-						tempOut.flush();
+					 	
+					 	InputStream is = new ByteArrayInputStream(mail);
+					 	tempOut.write(mail, 0, mail.length);
+					 	tempOut.flush();
+					 	SOCK.close();
+					 	
 						System.out.println("FINISH SENDING");
 					}catch(Exception e){
 						e.printStackTrace();
