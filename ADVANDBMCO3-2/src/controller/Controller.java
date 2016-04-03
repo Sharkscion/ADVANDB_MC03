@@ -1,7 +1,11 @@
 package controller;
 
 import java.awt.FlowLayout;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.Socket;
@@ -16,6 +20,7 @@ import java.util.concurrent.CyclicBarrier;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import model.CustomResultSet;
 import model.Observer;
 import model.QueryObserver;
 import model.ResultSets;
@@ -43,7 +48,6 @@ public class Controller implements Subject, QueryObserver
 		OUT = null;
 		rs = null;
 		t = null;
-		rsList = new ArrayList<ResultSet>();
 		obList = new ArrayList<Observer>();
 		// instantiate database manager
 	}
@@ -72,6 +76,27 @@ public class Controller implements Subject, QueryObserver
 		T.start();
 	}
 	
+	public static byte[] byteConcat(byte[] A, byte[] B) {
+        int aLen = A.length;
+        int bLen = B.length;
+        byte[] C = new byte[aLen + bLen];
+        System.arraycopy(A, 0, C, 0, aLen);
+        System.arraycopy(B, 0, C, aLen, bLen);
+        return C;
+    }
+	
+   public static byte[] serialize(Object obj) throws IOException {
+	    ByteArrayOutputStream out = new ByteArrayOutputStream();
+	    ObjectOutputStream os = new ObjectOutputStream(out);
+	    os.writeObject(obj);
+	    return out.toByteArray();
+	}
+	public static Object deserialize(byte[] data) throws IOException, ClassNotFoundException {
+	    ByteArrayInputStream in = new ByteArrayInputStream(data);
+	    ObjectInputStream is = new ObjectInputStream(in);
+	    return is.readObject();
+	}
+		
 	public void RETURN_READ_EXECUTE(String query , String sender){
 		
 		System.out.println("RECEIVED READ REQUEST FROM : " +sender);
@@ -81,6 +106,26 @@ public class Controller implements Subject, QueryObserver
 		t.setIsolation_level(Transaction.ISO_SERIALIZABLE);
 		Thread T = new Thread(t);
 		T.start();
+		
+	}
+	
+	public void RECEIVE_RESULT_SET(byte[] resultset){
+		try {
+			CustomResultSet crs = (CustomResultSet) deserialize(resultset);
+			if(crs == null)
+				System.out.println("NULL SI CRS :(");
+			else{
+				updateResultSet(crs.getRs());
+				notifyObservers();
+			}
+				
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	public void SEND_READ_TO_RECEIVER(String mail, Site receiver) throws UnknownHostException, IOException{
@@ -90,11 +135,14 @@ public class Controller implements Subject, QueryObserver
 			OUT.flush();
 	}
 	
+	
 	// Send READ REQUEST NOTIFICATION
 	// first# -> query
 	// second# -> area
 	public void SEND_READ_REQUEST(String readRequest)
 	{
+		rsList = new ArrayList<ResultSet>();
+		
 		System.out.println("==STARTING READ REQUEST==");
 		Site receiver = null;
 		String message[] = readRequest.split("#", 2);
@@ -174,10 +222,7 @@ public class Controller implements Subject, QueryObserver
 
 	@Override
 	public void notifyQueryObservers(ResultSet rs) {
-		// TODO Auto-generated method stub
-		
-		
-		
+		// TODO Auto-generated method stub		
 		updateResultSet(rs);
 	}
 

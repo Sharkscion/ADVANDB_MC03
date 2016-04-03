@@ -47,17 +47,21 @@ public class Client {
 				
 				InputStream input = S.getInputStream();			
 				byte [] scannedbytes = new byte [65500];
-			    int bytesRead = input.read(scannedbytes,0,scannedbytes.length);
+						
+				int bytesRead = input.read(scannedbytes,0,scannedbytes.length);
 			    int current = bytesRead;
+			    do{
+			    	System.out.println("Client receive (in do while)");
+			    	bytesRead = input.read(scannedbytes,current,scannedbytes.length - current);
+			    	if(bytesRead > -1)
+			    		current += bytesRead;
+			    	System.out.println("Client receive (read " + bytesRead + "/" + current + " bytes)");
+			    } while(bytesRead > 0);
 			    
-			    ObjectInputStream ois = new ObjectInputStream(input);
-			    System.out.println(ois.readObject());
-			    
+			    System.out.println("HELLO");
 			    System.out.println("Client receive (continue to read bytes)");
 			    String InputCommand = new String(scannedbytes, "UTF-8");
-			    
-			    System.out.println("Client receive (input string start: " + InputCommand.substring(0,5) + ")");
-				
+			    				
 			    String mailServer[] = InputCommand.split("#", 2);
 			    switch(mailServer[0]){
 			    	case Tags.RETURN_READ: 
@@ -66,6 +70,8 @@ public class Client {
 			    			System.out.println("RECEIVED MAIL FROM--" + mail[1]);
 			    			c.RETURN_READ_EXECUTE(mail[0], mail[1]);
 			    		break;
+			    	case Tags.RESULT_SET:
+			    			c.RECEIVE_RESULT_SET(Arrays.copyOfRange(scannedbytes, mailServer[0].getBytes().length, current));
 			    	default: System.out.println("PROTOCOL NOT RECOGNIZED!");
 			    }
 			   

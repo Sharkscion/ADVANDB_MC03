@@ -42,6 +42,8 @@ import javax.sql.rowset.RowSetWarning;
 import javax.sql.rowset.spi.SyncProvider;
 import javax.sql.rowset.spi.SyncProviderException;
 
+import controller.Controller;
+
 public class Transaction implements Runnable, Subject{
 	public static final int ISO_READ_UNCOMMITTED = 1;
 	public static final int ISO_READ_COMMITTED = 2;
@@ -242,6 +244,10 @@ public class Transaction implements Runnable, Subject{
 				
 				preparedStatement = con.prepareStatement(query);
 				rs = preparedStatement.executeQuery();
+				CustomResultSet crs2 = new CustomResultSet(rs);
+				System.out.println("CRS: "+ crs2);
+				
+				
 				if(!Tags.NONE.equals(sender)){
 					CustomResultSet crs = new CustomResultSet(rs);
 					Site s = Site.searchConnection(sender);
@@ -249,8 +255,12 @@ public class Transaction implements Runnable, Subject{
 					try{
 						Socket SOCK = new Socket(s.getIpadd(),Tags.PORT);
 						ObjectOutputStream tempOut = new ObjectOutputStream(SOCK.getOutputStream());
-						tempOut.writeObject(Tags.RESULT_SET+"#"+crs);
+					 	byte[] protocol = Tags.RESULT_SET.getBytes();
+					 	byte[] object = Controller.serialize(crs);
+					 	byte[] mail = Controller.byteConcat(protocol, object);
+						tempOut.writeObject(mail);
 						tempOut.flush();
+						
 					}catch(Exception e){
 						System.out.println("FAILED TO SEND RESULT SET TO : "+ sender);
 					}
