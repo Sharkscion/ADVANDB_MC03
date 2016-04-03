@@ -56,7 +56,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 	private JPanel customPanel, defaultPanel;
 	private JPanel transactionsPanel, queryEditPanel;
 	private JScrollPane readScroll, customScroll, pane;
-	private JTabbedPane queryTabbedPane;
+	private JTabbedPane queryTabbedPane, resultsTabbedPane;
 	private JTextArea readTextArea, customTextArea, transactionList;
 	private JRadioButton rbAbort, rbCommit;
 	private JButton btnRead, btnWrite;
@@ -73,7 +73,8 @@ public class ClientGUI extends JFrame implements ActionListener{
 	private HashMap<String, JTextField> queryComponents;
 	private JButton btnSubmit;
 	
-	private ArrayList<String> transcationQueries = new ArrayList<String>();
+        private ArrayList<TablePanel> tablePanelList = new ArrayList<TablePanel>();
+	private ArrayList<String> transactionQueries = new ArrayList<String>();
 	private HashMap<String, String> readWriteComponents = new HashMap<String, String>();
 	private int transactionCounter = 1;
 	
@@ -209,7 +210,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				// TODO Auto-generated method stub
-				transcationQueries.clear();
+				transactionQueries.clear();
 				transactionCounter = 1;
 				transactionList.removeAll();
 				transactionList.repaint();
@@ -282,7 +283,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 			System.out.println(query);
 		}
 		
-		transcationQueries.add(query);
+		transactionQueries.add(query);
 		readWriteComponents.clear();
 		
 		return query;
@@ -334,7 +335,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 			query = query + ";";
 		}
 		
-		transcationQueries.add(query);
+		transactionQueries.add(query);
 		readWriteComponents.clear();
 		
 		return query;
@@ -368,6 +369,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 		topPanel.add(createTransactionsPanel(), BorderLayout.SOUTH);
 		
 		btnSubmit = new JButton("Submit");
+                btnSubmit.addActionListener(this);
 		transactionsPanel.add(btnSubmit, BorderLayout.SOUTH);
 		topPanel.add(createQueryPanel(), BorderLayout.CENTER);
 		topPanel.add(createSettingsPanel(), BorderLayout.NORTH);
@@ -483,12 +485,15 @@ public class ClientGUI extends JFrame implements ActionListener{
 	
 	public void createBottomPanel() {
 		bottomPanel = new JPanel();
-		bottomPanel.setPreferredSize(new Dimension(800, 350));
+		bottomPanel.setPreferredSize(new Dimension(600, 350));
 		bottomPanel.setLayout(new BorderLayout());
 		Border border = BorderFactory.createTitledBorder("Dataset");
 		Border margin = BorderFactory.createEmptyBorder(10,10,10,10);
 		bottomPanel.setBorder(new CompoundBorder(border, margin));
 		
+                resultsTabbedPane = new JTabbedPane(JTabbedPane.TOP);
+                resultsTabbedPane.setBackground(Color.RED);
+                bottomPanel.add(resultsTabbedPane, BorderLayout.CENTER);
 		//bottomPanel.add(createTablePanel(), BorderLayout.CENTER);
 	}
 	
@@ -584,8 +589,34 @@ public class ClientGUI extends JFrame implements ActionListener{
 		if(e.getSource() == btnRead){
 			
 			
-		}
+		}else if(e.getSource() == btnSubmit){
+                    resultsTabbedPane.removeAll();
+                    tablePanelList.clear();
+                    for(int i = 0; i<transactionList.getLineCount()-1; i++){
+                        TablePanel tablePanel= new TablePanel("");
+                        tablePanel.setBackground(Color.WHITE);
+                        resultsTabbedPane.addTab("Query", null, tablePanel, null);
+                        resultsTabbedPane.setSelectedIndex(resultsTabbedPane.getTabCount()-1);
+                        tablePanel.setCorrespondingTab(this,resultsTabbedPane.getSelectedIndex()); //select last one
+                        tablePanelList.add(resultsTabbedPane.getSelectedIndex(),tablePanel);
+                    }
+                }
 		
 	}
+        
+        public void closeTab(int index){
+            
+            if(index!=resultsTabbedPane.getTabCount()-1){
+                for(int i = index+1;i< tablePanelList.size(); i++){
+                    System.out.println("ITERATE: "+ (i)+"OLD: " + tablePanelList.get(i).getTabIndex()+ "NEW: " + (tablePanelList.get(i).getTabIndex()-1));
+                    tablePanelList.get(i).changeTabIndex(tablePanelList.get(i).getTabIndex()-1);
+                    
+                }
+            }
+            
+            resultsTabbedPane.remove(index);
+            tablePanelList.remove(index);
+            System.out.println("Removed: " + (index+1));
+        }
 	
 }
