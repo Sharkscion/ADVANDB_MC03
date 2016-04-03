@@ -50,13 +50,7 @@ public class Client {
 						
 				int bytesRead = input.read(scannedbytes,0,scannedbytes.length);
 			    int current = bytesRead;
-			    do{
-			    	System.out.println("Client receive (in do while)");
-			    	bytesRead = input.read(scannedbytes,current,scannedbytes.length - current);
-			    	if(bytesRead > -1)
-			    		current += bytesRead;
-			    	System.out.println("Client receive (read " + bytesRead + "/" + current + " bytes)");
-			    } while(bytesRead > 0);
+			    
 			    
 			    System.out.println("HELLO");
 			    System.out.println("Client receive (continue to read bytes)");
@@ -71,7 +65,9 @@ public class Client {
 			    			c.RETURN_READ_EXECUTE(mail[0], mail[1]);
 			    		break;
 			    	case Tags.RESULT_SET:
-			    			c.RECEIVE_RESULT_SET(Arrays.copyOfRange(scannedbytes, mailServer[0].getBytes().length, current));
+			    			System.out.println("PASOK RESULT SET");
+			    			c.RECEIVE_RESULT_SET(Arrays.copyOfRange(scannedbytes, mailServer[0].getBytes().length, mailServer[0].getBytes().length - mailServer[1].getBytes().length));
+			    			break;
 			    	default: System.out.println("PROTOCOL NOT RECOGNIZED!");
 			    }
 			   

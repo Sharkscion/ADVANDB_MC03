@@ -243,15 +243,17 @@ public class Transaction implements Runnable, Subject{
 			if(!query.equals("")){
 				
 				preparedStatement = con.prepareStatement(query);
-				rs = preparedStatement.executeQuery();
-				CustomResultSet crs2 = new CustomResultSet(rs);
-				System.out.println("CRS: "+ crs2);
-				
-				
+				rs = preparedStatement.executeQuery();				
+				System.out.println("SENDER: "+sender);
 				if(!Tags.NONE.equals(sender)){
-					CustomResultSet crs = new CustomResultSet(rs);
-					Site s = Site.searchConnection(sender);
 					
+					System.out.println("HELO");
+					
+					CustomResultSet crs = new CustomResultSet(rs);
+					System.out.println("HI?");
+					Site s = Site.searchConnection(sender);
+					if(s == null)
+						System.out.println("S NULL");
 					try{
 						Socket SOCK = new Socket(s.getIpadd(),Tags.PORT);
 						ObjectOutputStream tempOut = new ObjectOutputStream(SOCK.getOutputStream());
@@ -265,8 +267,8 @@ public class Transaction implements Runnable, Subject{
 						System.out.println("FAILED TO SEND RESULT SET TO : "+ sender);
 					}
 					
-				}				
-				notifyQueryObservers(rs);
+				}else				
+					notifyQueryObservers(rs);
 			}
 			
 		}catch(Exception e){
