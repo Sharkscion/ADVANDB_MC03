@@ -34,7 +34,7 @@ public class Controller implements Subject, QueryObserver
 	// database manager?
 	
 	private ArrayList<Observer> obList;
-	private Site owner;
+	public static Site owner;
 	private Socket SOCK;
 	private PrintWriter OUT;
 	private ResultSets rs;
@@ -129,6 +129,7 @@ public class Controller implements Subject, QueryObserver
 	}
 	
 	public void SEND_READ_TO_RECEIVER(String mail, Site receiver) throws UnknownHostException, IOException{
+			//System.out.println("");
 			SOCK = new Socket(receiver.getIpadd(), Tags.PORT);
 			OUT = new PrintWriter(SOCK.getOutputStream());
 			OUT.println(mail);
@@ -163,6 +164,7 @@ public class Controller implements Subject, QueryObserver
 							EXECUTE_READ_REQUEST(message[0]);
 						else if(Tags.MARINDUQUE.equals(message[1])){
 							receiver = owner.searchConnection(Tags.CENTRAL);
+							
 							try {
 								SEND_READ_TO_RECEIVER(mail, receiver);
 							} catch (Exception e){

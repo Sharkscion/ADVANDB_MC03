@@ -6,7 +6,7 @@ public class Site {
 	private String ipadd;
 	private String name;
 	
-	public static ArrayList<Site> connectionList;
+	public ArrayList<Site> connectionList;
 
 
 	public Site(String ipadd, String name){
@@ -44,13 +44,17 @@ public class Site {
 		connectionList.add(newSite);
 	}
 	
-	public static Site searchConnection(String username){
+	public Site searchConnection(String username){
 		
 		Site s = null;
-		
+	//	System.out.println("LOOB NI  "+ username);
 		int x = 0;
 		
-		while(!connectionList.get(x).getName().equals(username)) x++;
+		//System.out.println("CONNECT ZISE:" + connectionList.size());
+		while(!connectionList.get(x).getName().equals(username)){ 
+			//System.out.println("S " +connectionList.get(x));
+			x++;
+		}
 		
 		s = connectionList.get(x);
 		

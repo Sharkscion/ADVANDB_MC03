@@ -10,6 +10,7 @@ import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.Socket;
 import java.net.URL;
+import java.security.acl.Owner;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.Clob;
@@ -250,10 +251,9 @@ public class Transaction implements Runnable, Subject{
 					System.out.println("HELO");
 					
 					CustomResultSet crs = new CustomResultSet(rs);
-					System.out.println("HI?");
-					Site s = Site.searchConnection(sender);
-					if(s == null)
-						System.out.println("S NULL");
+					System.out.println("HI? " + Controller.owner.getName());
+					Site s = Controller.owner.searchConnection(sender);
+					System.out.println("SNAME: "+s.getName());
 					try{
 						Socket SOCK = new Socket(s.getIpadd(),Tags.PORT);
 						ObjectOutputStream tempOut = new ObjectOutputStream(SOCK.getOutputStream());
@@ -281,7 +281,7 @@ public class Transaction implements Runnable, Subject{
 		// TODO Auto-generated method stub
 		beginTransaction();
 		runTransaction();
-		endTransaction(Transaction.COMMIT);
+		//endTransaction(Transaction.COMMIT);
 	}
 
 	@Override
