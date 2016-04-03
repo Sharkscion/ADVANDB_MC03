@@ -19,6 +19,6 @@ public class Driver
 		Server SER = new Server(con, Tags.PORT);
 		Thread X = new Thread(SER);
 		X.start();	// Runs the server process
-		ClientGUI mainGUI = new ClientGUI();
+		ClientGUI mainGUI = new ClientGUI(con);
 	}
 }

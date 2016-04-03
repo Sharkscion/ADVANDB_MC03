@@ -6,6 +6,8 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.BrokenBarrierException;
@@ -14,24 +16,43 @@ import java.util.concurrent.CyclicBarrier;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import model.Observer;
+import model.QueryObserver;
+import model.ResultSets;
 import model.Site;
+import model.Subject;
 import model.Tags;
 import model.Transaction;
 
-public class Controller
+public class Controller implements Subject, QueryObserver
 {
 	// database manager?
 	
+	private ArrayList<Observer> obList;
 	private Site owner;
 	private Socket SOCK;
 	private PrintWriter OUT;
+	private ResultSets rs;
+	private Transaction t;
+	private ArrayList<ResultSet> rsList;
 	
 	public Controller(Site owner)
 	{
 		this.owner = owner;
 		SOCK = null;
 		OUT = null;
+		rs = null;
+		t = null;
+		rsList = new ArrayList<ResultSet>();
+		obList = new ArrayList<Observer>();
 		// instantiate database manager
+	}
+	
+	public void setResultSets(ResultSets rs){
+		this.rs =rs;
+	}
+	public ResultSets getResultSets(){
+		return this.rs;
 	}
 
 	public void add(String ip, String name)
@@ -42,6 +63,24 @@ public class Controller
 	
 	public void EXECUTE_READ_REQUEST(String query){
 		System.out.println("EXECUTING QUERY READ REQUEST: "+ query);
+		
+		t = new Transaction(query, Tags.NONE);
+		t.registerObserver(this);
+		t.setTableName("numbers");
+		t.setIsolation_level(Transaction.ISO_SERIALIZABLE);
+		Thread T = new Thread(t);
+		T.start();
+	}
+	
+	public void RETURN_READ_EXECUTE(String query , String sender){
+		
+		System.out.println("RECEIVED READ REQUEST FROM : " +sender);
+		t = new Transaction(query, sender);
+		t.registerObserver(this);
+		t.setTableName("numbers");
+		t.setIsolation_level(Transaction.ISO_SERIALIZABLE);
+		Thread T = new Thread(t);
+		T.start();
 	}
 	
 	public void SEND_READ_TO_RECEIVER(String mail, Site receiver) throws UnknownHostException, IOException{
@@ -63,7 +102,8 @@ public class Controller
 		
 		if(!Tags.NONE.equals(message[1])){
 			
-			mail = Tags.READ_EXECUTE+"#"+message[0];
+			//mailExecute = Tags.EXECUTE_READ+"#"+message[0]+"#"+
+			mail = Tags.RETURN_READ+"#"+message[0]+"#" + owner.getName();
 			
 			switch(owner.getName()){
 				case Tags.CENTRAL: 
@@ -101,4 +141,50 @@ public class Controller
 		
 		System.out.println("==READ REQUEST END==");
 	 }
+
+	@Override
+	public void registerObserver(Observer o) {
+		// TODO Auto-generated method stub
+		obList.add(o);
+	}
+
+	@Override
+	public void unRegisterObserver(Observer o) {
+		// TODO Auto-generated method stub
+		obList.remove(o);
+	}
+	
+	@Override
+	public void notifyObservers() {
+		// TODO Auto-generated method stub
+		
+	   rs = new ResultSets(rsList);
+	   for(Observer o: obList){
+		    System.out.println("UPDATING TABLE");
+            o.update();
+        }
+	}
+
+	@Override
+	public void update() {
+		// TODO Auto-generated method stub
+		notifyObservers();
+		//setResultSet();
+	}
+
+	@Override
+	public void notifyQueryObservers(ResultSet rs) {
+		// TODO Auto-generated method stub
+		
+		
+		
+		updateResultSet(rs);
+	}
+
+	@Override
+	public void updateResultSet(ResultSet rs) {
+		System.out.println("FINISH EXECUTING QUERY READ REQUEST");
+		System.out.println("SETTING RESULT SET");
+		rsList.add(t.getResultSet());
+	}
 }

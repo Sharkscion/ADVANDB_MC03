@@ -3,11 +3,46 @@ package model;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.math.BigDecimal;
+import java.net.Socket;
+import java.net.URL;
+import java.sql.Array;
+import java.sql.Blob;
+import java.sql.Clob;
 import java.sql.Connection;
+import java.sql.Date;
+import java.sql.NClob;
 import java.sql.PreparedStatement;
+import java.sql.Ref;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.RowId;
 import java.sql.SQLException;
+import java.sql.SQLWarning;
+import java.sql.SQLXML;
+import java.sql.Savepoint;
+import java.sql.Statement;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Map;
 
-public class Transaction implements Runnable{
+import javax.sql.RowSet;
+import javax.sql.RowSetEvent;
+import javax.sql.RowSetListener;
+import javax.sql.RowSetMetaData;
+import javax.sql.rowset.CachedRowSet;
+import javax.sql.rowset.RowSetWarning;
+import javax.sql.rowset.spi.SyncProvider;
+import javax.sql.rowset.spi.SyncProviderException;
+
+public class Transaction implements Runnable, Subject{
 	public static final int ISO_READ_UNCOMMITTED = 1;
 	public static final int ISO_READ_COMMITTED = 2;
 	public static final int ISO_REPEATABLE_READ = 3;
@@ -34,24 +69,37 @@ public class Transaction implements Runnable{
 	private boolean isWrite;
 	private String protocolTag;
 	private String query;
+	private String sender;
+	private ArrayList<QueryObserver> obList;
+	
+	private ResultSet rs;
 
+	
 	public Transaction(String protocolTag, String name, String schema, String tableName,String query, boolean isWrite){
-		try {
-			dbCon = new DBConnection();
-			con = dbCon.getConnection();
-			preparedStatement = null;
-			this.query = query;
-			this.protocolTag = protocolTag;
-			this.schema = schema;
-			this.isWrite = isWrite;
-			this.tableName = tableName;
-			this.name = name;
-			isolation_level = ISO_SERIALIZABLE;
-			fWriter = new BufferedWriter(new FileWriter("log.txt", true));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	
+		dbCon = new DBConnection();
+		con = dbCon.getConnection();
+		preparedStatement = null;
+		obList = new ArrayList<QueryObserver>();
+		rs = null;
+		this.query = query;
+		this.protocolTag = protocolTag;
+		this.schema = schema;
+		this.isWrite = isWrite;
+		this.tableName = tableName;
+		this.name = name;
+		isolation_level = ISO_SERIALIZABLE;
+	}
+	
+	public Transaction(String query, String sender){
+		dbCon = new DBConnection();
+		con = dbCon.getConnection();
+		preparedStatement = null;
+		obList = new ArrayList<QueryObserver>();
+		rs = null;
+		this.sender = sender;
+		this.query = query;
+		isolation_level = ISO_SERIALIZABLE;
 	}
 	
 	public String getTableName() {
@@ -86,7 +134,7 @@ public class Transaction implements Runnable{
 		try {
 			con.setAutoCommit(false);
 			
-			switch(isolation_level) {
+			switch(this.isolation_level) {
 			
 				case ISO_READ_UNCOMMITTED:
 						con.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
@@ -116,7 +164,7 @@ public class Transaction implements Runnable{
 	public void beginTransaction(){
 		
 		String queryLock = "";
-		System.out.println("\nBegin Transaction: " + name);
+		System.out.println("\nBegin Transaction ");
 		
 		try {
 			
@@ -144,6 +192,7 @@ public class Transaction implements Runnable{
 		if(action == COMMIT){
 			try {
 				con.commit();
+				notifyObservers();
 			}  catch (SQLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -179,17 +228,75 @@ public class Transaction implements Runnable{
 		
 	}
 	
-	public void runTransaction(){
-		System.out.println("HELLO");
+	public void setResultSet(ResultSet rs){
+		this.rs = rs;
+	}
+	public ResultSet getResultSet(){
+		return this.rs;
 	}
 	
+	public void runTransaction(){
+		
+		try{			
+			if(!query.equals("")){
+				
+				preparedStatement = con.prepareStatement(query);
+				rs = preparedStatement.executeQuery();
+				if(!Tags.NONE.equals(sender)){
+					CustomResultSet crs = new CustomResultSet(rs);
+					Site s = Site.searchConnection(sender);
+					
+					try{
+						Socket SOCK = new Socket(s.getIpadd(),Tags.PORT);
+						ObjectOutputStream tempOut = new ObjectOutputStream(SOCK.getOutputStream());
+						tempOut.writeObject(Tags.RESULT_SET+"#"+crs);
+						tempOut.flush();
+					}catch(Exception e){
+						System.out.println("FAILED TO SEND RESULT SET TO : "+ sender);
+					}
+					
+				}				
+				notifyQueryObservers(rs);
+			}
+			
+		}catch(Exception e){
+			System.out.println("ERROR IN EXECUTING QUERY!");
+		}
+	}
 	
-
-
 	@Override
 	public void run() {
 		// TODO Auto-generated method stub
 		beginTransaction();
 		runTransaction();
+		endTransaction(Transaction.COMMIT);
+	}
+
+	@Override
+	public void registerObserver(Observer o) {
+		// TODO Auto-generated method stub
+		if(obList == null)
+			System.out.println("NUL DE TAE");
+		obList.add((QueryObserver) o);
+	}
+
+	@Override
+	public void unRegisterObserver(Observer o) {
+		// TODO Auto-generated method stub
+		obList.remove((QueryObserver)o);
+	}
+
+	@Override
+	public void notifyObservers() {
+		// TODO Auto-generated method stub
+		for(QueryObserver o: obList)
+			o.update();
+	}
+	
+	@Override
+	public void notifyQueryObservers(ResultSet rs) {
+		// TODO Auto-generated method stub
+		for(QueryObserver o: obList)
+			o.updateResultSet(rs);
 	}
 }
