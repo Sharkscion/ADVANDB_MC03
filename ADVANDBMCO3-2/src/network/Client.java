@@ -50,17 +50,6 @@ public class Client {
 			    int current = bytesRead;
 			    
 			    System.out.println("Client receive (continue to read bytes)");
-			    
-			    do{
-			    	System.out.println("Client receive (in do while)");
-			    	bytesRead = input.read(scannedbytes,current,scannedbytes.length - current);
-			    	if(bytesRead > -1)
-			    		current += bytesRead;
-			    	System.out.println("Client receive (read " + bytesRead + "/" + current + " bytes)");
-			    } while(bytesRead > 0);
-			    
-			    System.out.println("Client receive (bytes read: " + current + ")");
-			    
 			    String InputCommand = new String(scannedbytes, "UTF-8");
 			    
 			    System.out.println("Client receive (input string start: " + InputCommand.substring(0,5) + ")");

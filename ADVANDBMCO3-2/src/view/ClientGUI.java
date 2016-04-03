@@ -3,6 +3,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
@@ -14,8 +15,12 @@ import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -27,6 +32,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
@@ -34,7 +40,6 @@ import javax.swing.border.CompoundBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 
-import net.miginfocom.swing.MigLayout;
 import model.Site;
 import model.Tags;
 import controller.Controller;
@@ -46,29 +51,37 @@ public class ClientGUI extends JFrame implements ActionListener{
 	private Controller c;
 	
 	private JPanel topPanel, bottomPanel;
-	private JPanel queryPanel, abortCommitPanel, mainPanel, isolationPanel, buttonsPanel;
-	private JPanel writePanel, readPanel;
-	private JScrollPane readScroll, writeScroll;
+	private JPanel queryPanel, abortCommitPanel, mainPanel, isolationPanel;
+	private JPanel customPanel, defaultPanel;
+	private JPanel transactionsPanel, queryEditPanel;
+	private JScrollPane readScroll, customScroll, pane;
 	private JTabbedPane queryTabbedPane;
-	private JTextArea readTextArea, writeTextArea;
+	private JTextArea readTextArea, customTextArea, transactionList;
 	private JRadioButton rbAbort, rbCommit;
-	private JButton btnReadSubmit;
-	private JButton btnWriteButton;
-	private JButton btnDisconnect;
-	//private ClientResponse clientResponse;
+	private JButton btnRead, btnWrite;
+	private JButton btnSubmitButton;
 	private JPanel settingsPanel;
-	private JComboBox cbIsolationLevel;
+	private JComboBox cbIsolationLevel, cbDefaultQueries;
 	private JPanel areaPanel;
 	private JCheckBox chckbxPalawan;
 	private JCheckBox chckbxMarinduque;
-	private JPanel friendsList;
 	
-	private JScrollPane spFriendsList;
 	private boolean isPalawan;
 	private boolean isMarinduque;
 	
-	public ClientGUI(Controller c) {
-		this.c = c;
+	JScrollPane changeQueryScrollPane;
+	JPanel changeCenterQueryPanel;
+	JPanel changeQueryPanelArea;
+	private HashMap<String, JTextField> queryComponents;
+	private JButton btnSubmit;
+	
+//	public ClientGUI(Controller c, ResultSet rs, Site client, ClientResponse clientResponse) {
+//		this.c = c;
+//		this.rs = rs;
+//		this.client = client;
+//		this.clientResponse = clientResponse;
+	
+	public ClientGUI() {
 		
 //		signUp();
 		  try {
@@ -82,32 +95,20 @@ public class ClientGUI extends JFrame implements ActionListener{
         createTopPanel();
         createBottomPanel();
         createButtonsPanel();
-        mainPanel.add(topPanel, BorderLayout.CENTER);  
-        mainPanel.add(bottomPanel, BorderLayout.SOUTH);
-        mainPanel.add(buttonsPanel, BorderLayout.NORTH);
+        mainPanel.add(topPanel, BorderLayout.WEST);  
+        mainPanel.add(bottomPanel, BorderLayout.EAST);
       
-        
         setBackground(Color.gray);
-        setSize(800, 700);
+        setSize(1000, 700);
         setVisible(true);
         setResizable(false);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
    
         Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
         setLocation(dim.width/2-this.getSize().width/2, dim.height/2-this.getSize().height/2);
-        
-        
     }
 	
 	public void createButtonsPanel(){
-		buttonsPanel = new JPanel();
-	    buttonsPanel.setBackground(Color.GRAY);
-	        
-        btnDisconnect = new JButton("DISCONNECT");
-        btnDisconnect.setBackground(Color.RED);
-        btnDisconnect.addActionListener(this);
-        buttonsPanel.setLayout(new BorderLayout(0, 0));
-        buttonsPanel.add(btnDisconnect, BorderLayout.EAST);
 	}
 	
 	public JPanel createQueryPanel(){
@@ -119,58 +120,127 @@ public class ClientGUI extends JFrame implements ActionListener{
         queryTabbedPane.setBackground(Color.WHITE);
         queryPanel.add(queryTabbedPane, BorderLayout.CENTER);
         
-        readPanel = new JPanel();
-        queryTabbedPane.addTab("Read Query", null, readPanel, null);
-        readPanel.setLayout(new GridLayout(0, 1, 0, 0));
-        readTextArea = new JTextArea(readPanel.getWidth(), readPanel.getHeight());
-        readScroll = new JScrollPane(readTextArea);
-        readScroll.setVerticalScrollBarPolicy ( ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS );
-        readPanel.add(readScroll);
+        defaultPanel = new JPanel();
+        defaultPanel.setBackground(Color.WHITE);
+        queryTabbedPane.addTab("Default", null, defaultPanel, null);
+        defaultPanel.setLayout(new BorderLayout());
         
-        btnReadSubmit = new JButton("SUBMIT");
-        btnReadSubmit.addActionListener(this);
-        readPanel.add(btnReadSubmit);
-             
-        writePanel = new JPanel();
-        writePanel.setBackground(Color.WHITE);
-        queryTabbedPane.addTab("Write Query", null, writePanel, null);
-        writePanel.setLayout(new GridLayout(0, 1, 0, 0));
-        writeTextArea = new JTextArea(writePanel.getWidth(), writePanel.getHeight());
-        writeScroll = new JScrollPane(writeTextArea);
-        writeScroll.setVerticalScrollBarPolicy ( ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS );
-        writePanel.add(writeScroll);
+        queryEditPanel = new JPanel();
+        queryEditPanel.setLayout(new BoxLayout(queryEditPanel, BoxLayout.PAGE_AXIS));
+        pane = new JScrollPane(queryEditPanel);
+        pane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        String[] defaultQueryChoices = {"select id, aquani_vol, aquanitype from hpq_aquani",
+        								"select id, age_yr, occup from hpq_mem"};
+        cbDefaultQueries = new JComboBox(defaultQueryChoices);
+        cbDefaultQueries.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				if(cbDefaultQueries.getSelectedItem().equals("select id, aquani_vol, aquanitype from hpq_aquani")) {
+					ArrayList<String> attributeList = new ArrayList<String>();
+					attributeList.add("Household ID");
+					attributeList.add("Fish Volume");
+					attributeList.add("Fish Type");
+				    createQueryEditPanel(attributeList);
+				} else {
+					ArrayList<String> attributeList = new ArrayList<String>();
+					attributeList.add("Household ID");
+					attributeList.add("Age");
+					attributeList.add("Occupation");
+				    createQueryEditPanel(attributeList);
+				}
+				queryEditPanel.repaint();
+			    queryEditPanel.revalidate();
+			    pane.repaint();
+			    pane.revalidate();
+			    defaultPanel.repaint();
+			    defaultPanel.revalidate();
+			}
+        });
         
-        btnWriteButton = new JButton("SUBMIT");
-        btnWriteButton.addActionListener(this);
-        writePanel.add(btnWriteButton);
+        /*************
+         * button panel for submitting read or write queries
+         *************/
+        JPanel btnsPanel = new JPanel();
+        btnsPanel.setBackground(Color.WHITE);
+        btnsPanel.setLayout(new FlowLayout(FlowLayout.TRAILING));
+        
+        btnRead = new JButton("Read");
+        btnRead.addActionListener(this);
+        
+        btnWrite = new JButton("Write");
+        btnWrite.addActionListener(this);
+        
+        btnsPanel.add(btnRead);
+        btnsPanel.add(btnWrite);
+        
+        defaultPanel.add(cbDefaultQueries, BorderLayout.NORTH);
+        defaultPanel.add(pane, BorderLayout.CENTER);
+        defaultPanel.add(btnsPanel, BorderLayout.SOUTH);
+        
+        customPanel = new JPanel();
+        customPanel.setBackground(Color.WHITE);
+        queryTabbedPane.addTab("Custom", null, customPanel, null);
+        customPanel.setLayout(new GridLayout(0, 1, 0, 0));
+        customTextArea = new JTextArea(customPanel.getWidth(), customPanel.getHeight());
+        customScroll = new JScrollPane(customTextArea);
+        customScroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        customPanel.add(customScroll);
+        btnSubmitButton = new JButton("Submit");
+        btnSubmitButton.addActionListener(this);
+        customPanel.add(btnSubmitButton);
         
         return queryPanel;
 	}
 	
+	public void createQueryEditPanel(ArrayList<String> attributeList) {
+		queryEditPanel.removeAll();
+        for(int i = 0; i < attributeList.size(); i++) {
+        	JPanel tempPanel = new JPanel();
+        	tempPanel.setLayout(new FlowLayout(FlowLayout.LEADING));
+        	
+        	JLabel tempLabel = new JLabel(attributeList.get(i) + ": ");
+        	JTextField tempField = new JTextField();
+        	tempField.setPreferredSize(new Dimension(100, 25));
+        	
+        	tempPanel.add(tempLabel);
+        	tempPanel.add(tempField);
+        	
+        	queryEditPanel.add(tempPanel);
+        }
+	}
+	
 	public void createTopPanel() {
 		topPanel = new JPanel();
-		topPanel.setPreferredSize(new Dimension(800, 260));
+		topPanel.setPreferredSize(new Dimension(400, 260));
+		topPanel.setLayout(new BorderLayout());
 		topPanel.setBackground(Color.LIGHT_GRAY);
 		Border border = BorderFactory.createTitledBorder("Controls");
 		Border margin = BorderFactory.createEmptyBorder(10,10,10,10);
 		topPanel.setBorder(new CompoundBorder(border, margin));
-		topPanel.setLayout(new BorderLayout(0, 0));
+		topPanel.add(createTransactionsPanel(), BorderLayout.SOUTH);
+		
+		btnSubmit = new JButton("Submit");
+		transactionsPanel.add(btnSubmit, BorderLayout.SOUTH);
 		topPanel.add(createQueryPanel(), BorderLayout.CENTER);
-		topPanel.add(createSettingsPanel(), BorderLayout.WEST);
-		topPanel.add(createConnectionListPanel(), BorderLayout.EAST);
+		topPanel.add(createSettingsPanel(), BorderLayout.NORTH);
 	}
 	
-	public JScrollPane createConnectionListPanel(){
-		friendsList = new JPanel();
-		friendsList.setBackground(Color.WHITE);
-	    friendsList.setLayout(new BorderLayout(0, 0));
+	public JPanel createTransactionsPanel() {
+		transactionsPanel = new JPanel();
+		transactionsPanel.setBackground(Color.WHITE);
+		transactionsPanel.setLayout(new BorderLayout());
+		transactionsPanel.setPreferredSize(new Dimension(250, 200));
+		transactionsPanel.setBorder(new TitledBorder(null, "Transcation List", TitledBorder.LEADING, TitledBorder.TOP, null, null));
 		
-	    spFriendsList = new JScrollPane();
-	    spFriendsList.setPreferredSize(new Dimension(120, 2));
-	    spFriendsList.setViewportView(friendsList);
-		friendsList.setLayout(new MigLayout("", "[]", "[]"));
+		transactionList = new JTextArea();
+		transactionList.setEditable(false);
+		JScrollPane transcationPane = new JScrollPane(transactionList);
+		transcationPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 		
-		return spFriendsList;
+		transactionsPanel.add(transcationPane, BorderLayout.CENTER);
+		
+		return transactionsPanel;
 	}
 	
 	public JPanel createSettingsPanel(){
@@ -184,19 +254,6 @@ public class ClientGUI extends JFrame implements ActionListener{
 		 return settingsPanel;
 	}
 	
-	public void setOnline(String[] name){
-		friendsList.removeAll();
-		JLabel label;
-		for (int i = 0; i < name.length; i++) {
-			if(!name.equals(this.getName())){
-				label = new JLabel(name[i]);
-				friendsList.add(label, "newline");
-			}
-			
-		}
-		friendsList.revalidate();
-		friendsList.repaint();
-	}
 	public JPanel createAreaPanel(){
 		
 		areaPanel = new JPanel();
@@ -262,10 +319,13 @@ public class ClientGUI extends JFrame implements ActionListener{
         abortCommitPanel.setBackground(Color.WHITE);
         abortCommitPanel.setBorder(new TitledBorder(null, "Abort or Commit", TitledBorder.LEADING, TitledBorder.TOP, null, null));
         
+        ButtonGroup buttonGroup = new ButtonGroup();
         rbAbort = new JRadioButton("Abort");
         rbAbort.setBackground(Color.WHITE);
         rbCommit = new JRadioButton("Commit");
         rbCommit.setBackground(Color.WHITE);
+        buttonGroup.add(rbAbort);
+        buttonGroup.add(rbCommit);
         
         abortCommitPanel.add(rbAbort, BorderLayout.NORTH);
         abortCommitPanel.add(rbCommit, BorderLayout.SOUTH);
@@ -282,7 +342,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 		Border margin = BorderFactory.createEmptyBorder(10,10,10,10);
 		bottomPanel.setBorder(new CompoundBorder(border, margin));
 		
-		bottomPanel.add(createTablePanel(), BorderLayout.CENTER);
+		//bottomPanel.add(createTablePanel(), BorderLayout.CENTER);
 	}
 	
 	public JPanel createTablePanel() {
@@ -353,17 +413,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 	}
 
 	
-//	public void signUp(){
-//		PrintWriter OUT;
-//		try {
-//			OUT = new PrintWriter(client.getSocket().getOutputStream());
-//			OUT.println(Tags.ADD_SITE+"#"+ client.getName());
-//			OUT.flush();
-//		} catch (IOException e1) {
-//			// TODO Auto-generated catch block
-//			e1.printStackTrace();
-//		}
-//	}
+
 	
 	
 	public String checkIfLocalOrGlobal(){
@@ -372,9 +422,10 @@ public class ClientGUI extends JFrame implements ActionListener{
 		
 		if(isPalawan)
 			result = Tags.PALAWAN;
-		else if (isMarinduque)
+		if (isMarinduque)
 			result = Tags.MARINDUQUE;
-		else if (isPalawan && isMarinduque)
+		
+		if (isPalawan && isMarinduque)
 			result = Tags.CENTRAL;
 		
 		return result;
@@ -383,14 +434,9 @@ public class ClientGUI extends JFrame implements ActionListener{
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		
-		if(e.getSource() == btnReadSubmit){
-			System.out.println("HELLO :/");
+		if(e.getSource() == btnRead){
 			
 			
-				String message = readTextArea.getText() + "#" + checkIfLocalOrGlobal();
-				
-				c.SEND_READ_REQUEST(message);
-
 		}
 		
 	}

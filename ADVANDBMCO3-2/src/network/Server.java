@@ -27,7 +27,6 @@ public class Server implements Runnable {
 				while(true){	// Waits for connections
 					Socket X = SS.accept(); 	// Accepts connections
 					c = new Client(controller, X); 			// Creates a new client for each connection
-					System.out.println("==CLIENT CONNECTED: "+X.getLocalAddress()+"==");
 				}
 			}
 			catch(Exception ex){
