@@ -74,7 +74,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 	private JButton btnSubmit;
 	
 	private ArrayList<String> transcationQueries = new ArrayList<String>();
-	private HashMap<String, String> whereComponents = new HashMap<String, String>();
+	private HashMap<String, String> readWriteComponents = new HashMap<String, String>();
 	private int transactionCounter = 1;
 	
 //	public ClientGUI(Controller c, ResultSet rs, Site client, ClientResponse clientResponse) {
@@ -172,7 +172,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				// TODO Auto-generated method stub
-				String que = getQuery();
+				String que = getReadQuery();
 				transactionList.append(transactionCounter + ". " + "Read " + que + "\n"); 
 				transactionCounter++;
 			}
@@ -183,7 +183,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				// TODO Auto-generated method stub
-				String que = getQuery();
+				String que = getWriteQuery();
 				transactionList.append(transactionCounter + ". " + "Write " + que + "\n"); 
 				transactionCounter++;
 			}
@@ -222,7 +222,73 @@ public class ClientGUI extends JFrame implements ActionListener{
         return queryPanel;
 	}
 	
-	public String getQuery() {
+	//DOES NOT TAKE INTO ACCOUNT STRING TYPE (lacking: " ")
+	public String getWriteQuery() {
+		String query = "";
+		String table = "";
+		String set = "set ";
+		String where = "where ";
+		String[] attributeTitles = new String[3];
+		
+		if(cbDefaultQueries.getSelectedIndex() == 0) {
+			table = "hpq_aquani";
+		} else {
+			table = "hpq_mem";
+		}
+		
+		if(cbDefaultQueries.getSelectedIndex() == 0) {
+			attributeTitles[0] = "hpq_hh_id";
+			attributeTitles[1] = "aquani_vol";
+			attributeTitles[2] = "aquanitype_o";
+		} else {
+			attributeTitles[0] = "id";
+			attributeTitles[1] = "age_yr";
+			attributeTitles[2] = "occup";
+		}
+		
+		Component[] children = queryEditPanel.getComponents();
+		for(int i = 0; i < children.length; i++) {
+			JPanel panel = (JPanel) children[i];
+			Component[] panelChildren = panel.getComponents();
+			for(int j = 0; j < panelChildren.length; j++) {
+			    if(panelChildren[j] instanceof JTextField) {
+			    	String text = ((JTextField)panelChildren[j]).getText();
+			    	if(!text.isEmpty()) {
+			    		readWriteComponents.put(attributeTitles[i], text);
+			    	}
+			    }
+			}
+		}
+		
+		for(Entry<String, String> entry : readWriteComponents.entrySet()) {
+			if(entry.getKey().equals("id") || entry.getKey().equals("hpq_hh_id")) {
+				where = where + "id = " + entry.getValue() + ";";
+				readWriteComponents.remove(entry.getKey());
+			} 
+		}
+		
+		int i = 1;
+		for(Entry<String, String> entry : readWriteComponents.entrySet()) {
+			if (i < readWriteComponents.size()) {
+				set = set + entry.getKey() + " = " + entry.getValue() + ", ";
+			} else {
+				set = set + entry.getKey() + " = " + entry.getValue();
+			}
+			i++;
+		}
+		
+		if(!where.isEmpty() && !set.isEmpty()) {
+			query = "UPDATE " + table + " " + set + " " + where;
+			System.out.println(query);
+		}
+		
+		transcationQueries.add(query);
+		readWriteComponents.clear();
+		
+		return query;
+	}
+	
+	public String getReadQuery() {
 		String query = cbDefaultQueries.getSelectedItem().toString();
 		String where = "where ";
 		String[] attributeTitles = new String[3];
@@ -245,15 +311,15 @@ public class ClientGUI extends JFrame implements ActionListener{
 			    if(panelChildren[j] instanceof JTextField) {
 			    	String text = ((JTextField)panelChildren[j]).getText();
 			    	if(!text.isEmpty()) {
-			    		whereComponents.put(attributeTitles[i], text);
+			    		readWriteComponents.put(attributeTitles[i], text);
 			    	}
 			    }
 			}
 		}
 		
 		int i = 1;
-		for(Entry<String, String> entry : whereComponents.entrySet()) {
-			if(i < whereComponents.size()) {
+		for(Entry<String, String> entry : readWriteComponents.entrySet()) {
+			if(i < readWriteComponents.size()) {
 				where = where + entry.getKey() + " = " + entry.getValue() + " AND ";
 			} else {
 				where = where + entry.getKey() + " = " + entry.getValue() + ";";
@@ -264,10 +330,12 @@ public class ClientGUI extends JFrame implements ActionListener{
 		if(!where.equals("where ")) {
 			query = query + " " + where;
 			System.out.println(query);
+		} else {
+			query = query + ";";
 		}
 		
 		transcationQueries.add(query);
-		whereComponents.clear();
+		readWriteComponents.clear();
 		
 		return query;
 	}
