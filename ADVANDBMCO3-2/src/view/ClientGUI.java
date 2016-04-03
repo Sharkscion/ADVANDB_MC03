@@ -441,7 +441,7 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 		//public Transaction(String protocolTag, String name, String schema, String tableName,String query, boolean isWrite){
 
 			//Transaction t = new Transaction();
-			String message = customTextArea.getText() + "%" + checkIfLocalOrGlobal();
+			String message = customTextArea.getText() + Tags.PROTOCOL + checkIfLocalOrGlobal();
 			c.SEND_READ_REQUEST(message);		
 		}else if (e.getSource() == rbAbort){
 			isolationLevel = Transaction.ABORT;

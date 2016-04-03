@@ -1,6 +1,5 @@
 package controller;
 
-import java.awt.FlowLayout;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -8,23 +7,10 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CyclicBarrier;
 
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-
-import com.mysql.jdbc.CachedResultSetMetaData;
-import com.sun.rowset.CachedRowSetImpl;
-
-import model.CustomResultSet;
 import model.Observer;
 import model.QueryObserver;
 import model.ResultSets;
@@ -32,6 +18,8 @@ import model.Site;
 import model.Subject;
 import model.Tags;
 import model.Transaction;
+
+import com.sun.rowset.CachedRowSetImpl;
 
 public class Controller implements Subject, QueryObserver
 {
@@ -161,13 +149,13 @@ public class Controller implements Subject, QueryObserver
 		
 		System.out.println("==STARTING READ REQUEST==");
 		Site receiver = null;
-		String message[] = readRequest.split("#", 2);
+		String message[] = readRequest.split(Tags.PROTOCOL, 2);
 		String mail = "";
 		
 		if(!Tags.NONE.equals(message[1])){
 			
 			//mailExecute = Tags.EXECUTE_READ+"#"+message[0]+"#"+
-			mail = Tags.RETURN_READ+"#"+message[0]+"#" + owner.getName();
+			mail = Tags.RETURN_READ + Tags.PROTOCOL+message[0]+ Tags.PROTOCOL + owner.getName();
 			System.out.println(mail + "<-MAIL");
 			switch(owner.getName()){
 				case Tags.CENTRAL: 
@@ -223,11 +211,14 @@ public class Controller implements Subject, QueryObserver
 	public void notifyObservers() {
 		// TODO Auto-generated method stub
 		
-	   rs = new ResultSets(rsList);
-	   for(Observer o: obList){
-		    System.out.println("UPDATING TABLE");
-            o.update();
-        }
+		if(rsList != null){
+			rs = new ResultSets(rsList);
+			for(Observer o: obList){
+			    System.out.println("UPDATING TABLE");
+	            o.update();
+	        }
+		}
+	  
 	}
 
 	@Override

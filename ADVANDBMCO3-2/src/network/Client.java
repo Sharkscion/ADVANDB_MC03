@@ -60,7 +60,7 @@ public class Client {
 			    System.out.println("INPUT COMMAND: "+InputCommand.substring(0,6).toString());			
 			    String mailServer[] = InputCommand.split("%", 2);
 			    System.out.println("MAIL SERVER PROTOCOL: "+mailServer[0]);
-			    switch(InputCommand.substring(0,6).toString()){
+			    switch(mailServer[0].trim()){
 			    	case Tags.RETURN_READ: 
 			    			/** query-> index 0   sender-> index 1**/
 			    			String mail[] = mailServer[1].split("%",2);

@@ -14,6 +14,8 @@ public class Tags {
 	public static final String WRITE_EXECUTE = "0x008";
 	public static final String PARTIAL_COMMIT = "0x009";
 	
+	public static final String PROTOCOL ="%";
+	
 	
 	public static final String PALAWAN = "PALAWAN";
 	public static final String MARINDUQUE = "MARINDUQUE";

@@ -271,8 +271,9 @@ public class Transaction implements Runnable, Subject{
 					System.out.println("SNAME: "+s.getName());
 					try{
 						Socket SOCK = new Socket(s.getIpadd(),Tags.PORT);
+						String sProtocol = Tags.RESULT_SET.getBytes() + Tags.PROTOCOL;
 						ObjectOutputStream tempOut = new ObjectOutputStream(SOCK.getOutputStream());
-					 	byte[] protocol = Tags.RESULT_SET.getBytes();
+					 	byte[] protocol = sProtocol.getBytes();
 					 	byte[] object = Controller.serialize(cs);
 					 	byte[] mail = Controller.byteConcat(protocol, object);
 					 	System.out.println("PASOK SENDING AIL BYTE");
