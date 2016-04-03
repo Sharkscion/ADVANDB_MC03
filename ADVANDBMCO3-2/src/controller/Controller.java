@@ -61,7 +61,7 @@ public class Controller implements Subject, QueryObserver
 	public void EXECUTE_READ_REQUEST(String query){
 		System.out.println("EXECUTING QUERY READ REQUEST: "+ query);
 		
-		t = new Transaction(query, Tags.NONE);
+		t = new Transaction(query, Tags.NONE, Tags.NONE);
 		t.registerObserver(this);
 		t.setTableName("numbers");
 		t.setIsolation_level(Transaction.ISO_SERIALIZABLE);
@@ -90,10 +90,10 @@ public class Controller implements Subject, QueryObserver
 	    return is.readObject();
 	}
 		
-	public void RETURN_READ_EXECUTE(String query , String sender){
+	public void RETURN_READ_EXECUTE(String query , String sender, String isBoth){
 		
 		System.out.println("RECEIVED READ REQUEST FROM$$: " +sender+"%%#");
-		t = new Transaction(query, sender.trim());
+		t = new Transaction(query, sender, isBoth);
 		t.registerObserver(this);
 		t.setTableName("numbers");
 		t.setIsolation_level(Transaction.ISO_SERIALIZABLE);
@@ -130,12 +130,12 @@ public class Controller implements Subject, QueryObserver
 		}
 	}
 	
-	public void SEND_READ_TO_RECEIVER(String mail, Site receiver) throws UnknownHostException, IOException{
+	public void SEND_READ_TO_RECEIVER(String mail, Site receiver, String isBoth) throws UnknownHostException, IOException{
 			//System.out.println("");
 			
 			SOCK = new Socket(receiver.getIpadd(), Tags.PORT);
 			OUT = new PrintWriter(SOCK.getOutputStream());
-			OUT.println(mail);
+			OUT.println(mail+Tags.PROTOCOL+isBoth);
 			OUT.flush();
 	}
 	
@@ -169,12 +169,12 @@ public class Controller implements Subject, QueryObserver
 							receiver = owner.searchConnection(Tags.CENTRAL);
 							
 							try {
-								SEND_READ_TO_RECEIVER(mail, receiver);
+								SEND_READ_TO_RECEIVER(mail, receiver, Tags.NONE);
 							} catch (Exception e){
 								System.out.println(receiver.getName()+ " NOT CONNECTED!");
 								receiver = owner.searchConnection(Tags.MARINDUQUE);
 								try {
-									SEND_READ_TO_RECEIVER(mail, receiver);
+									SEND_READ_TO_RECEIVER(mail, receiver, Tags.NONE);
 								} catch (Exception e1){
 									System.out.println(receiver.getName() + " NOT CONNECTED!");
 								}
@@ -182,10 +182,50 @@ public class Controller implements Subject, QueryObserver
 						}else if(Tags.CENTRAL.equals(message[1])){
 							receiver = owner.searchConnection(Tags.CENTRAL);
 							try{
-								SEND_READ_TO_RECEIVER(mail, receiver);
-							}catch(Exception e){System.out.println(receiver.getName()+ " NOT CONNECTED!");}
+								SEND_READ_TO_RECEIVER(mail, receiver, Tags.NONE);
+							}catch(Exception e){
+								
+								System.out.println(receiver.getName()+ " NOT CONNECTED!");
+								receiver = owner.searchConnection(Tags.MARINDUQUE);
+								try {
+									SEND_READ_TO_RECEIVER(mail, receiver, Tags.BOTH);
+								} catch (Exception e1){
+									System.out.println(receiver.getName() + " NOT CONNECTED!");
+								}
+							}
 						} break;
+				case Tags.MARINDUQUE:
+					if(Tags.MARINDUQUE.equals(message[1]))
+						EXECUTE_READ_REQUEST(message[0]);
+					else if(Tags.PALAWAN.equals(message[1])){
+						receiver = owner.searchConnection(Tags.CENTRAL);
 						
+						try {
+							SEND_READ_TO_RECEIVER(mail, receiver, Tags.NONE);
+						} catch (Exception e){
+							System.out.println(receiver.getName()+ " NOT CONNECTED!");
+							receiver = owner.searchConnection(Tags.PALAWAN);
+							try {
+								SEND_READ_TO_RECEIVER(mail, receiver, Tags.NONE);
+							} catch (Exception e1){
+								System.out.println(receiver.getName() + " NOT CONNECTED!");
+							}
+						}
+					}else if(Tags.CENTRAL.equals(message[1])){
+						receiver = owner.searchConnection(Tags.CENTRAL);
+						try{
+							SEND_READ_TO_RECEIVER(mail, receiver, Tags.NONE);
+						}catch(Exception e){
+							
+							System.out.println(receiver.getName()+ " NOT CONNECTED!");
+							receiver = owner.searchConnection(Tags.PALAWAN);
+							try {
+								SEND_READ_TO_RECEIVER(mail, receiver, Tags.BOTH);
+							} catch (Exception e1){
+								System.out.println(receiver.getName() + " NOT CONNECTED!");
+							}
+						}
+					} break;	
 				default: System.out.println("UNRECOGNIZED USER");
 			}
 		}else{

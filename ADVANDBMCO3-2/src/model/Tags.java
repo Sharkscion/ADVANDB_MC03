@@ -21,6 +21,7 @@ public class Tags {
 	public static final String MARINDUQUE = "MARINDUQUE";
 	public static final String CENTRAL = "CENTRAL";
 	public static final String NONE = "NONE";
+	public static final String BOTH = "BOTH";
 	
 	public static final int PORT = 1234;
 }

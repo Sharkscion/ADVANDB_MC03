@@ -14,7 +14,7 @@ public class Driver
 		// Starting the Server
 		Site owner = new Site("192.168.1.138", Tags.PALAWAN);
 		Controller con = new Controller(owner);
-		con.add("192.168.1.140", Tags.CENTRAL);
+		con.add("192.168.1.140", Tags.MARINDUQUE);
 
 		Server SER = new Server(con, Tags.PORT);
 		Thread X = new Thread(SER);

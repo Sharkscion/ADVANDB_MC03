@@ -77,6 +77,7 @@ public class Transaction implements Runnable, Subject{
 	private String protocolTag;
 	private String query;
 	private String sender;
+	private String isBoth;
 	private ArrayList<QueryObserver> obList;
 	private CachedRowSetImpl cs;
 	private ResultSet rs;
@@ -99,7 +100,7 @@ public class Transaction implements Runnable, Subject{
 		isolation_level = ISO_SERIALIZABLE;
 	}
 	
-	public Transaction(String query, String sender){
+	public Transaction(String query, String sender, String isBoth){
 		dbCon = new DBConnection();
 		con = dbCon.getConnection();
 		preparedStatement = null;
@@ -108,6 +109,7 @@ public class Transaction implements Runnable, Subject{
 		cs = null;
 		this.sender = sender;
 		this.query = query;
+		this.isBoth = isBoth;
 		isolation_level = ISO_SERIALIZABLE;
 	}
 	
@@ -269,28 +271,14 @@ public class Transaction implements Runnable, Subject{
 				
 				System.out.println("SENDER: "+sender);
 				if(!Tags.NONE.equals(sender)){
-					Site s = Controller.searchForSite(sender);
-					System.out.println("SNAME: "+s.getName());
-					try{
-						Socket SOCK = new Socket(s.getIpadd(),Tags.PORT);
-						String sProtocol = Tags.RESULT_SET + Tags.PROTOCOL;
-						
-						OutputStream tempOut = SOCK.getOutputStream();
-					 	byte[] protocol = sProtocol.getBytes();
-					 	byte[] object = Controller.serialize(cs);
-					 	byte[] mail = Controller.byteConcat(protocol, object);
-					 	
-					 	InputStream is = new ByteArrayInputStream(mail);
-					 	tempOut.write(mail, 0, mail.length);
-					 	tempOut.flush();
-					 	SOCK.close();
-					 	
-						System.out.println("FINISH SENDING");
-					}catch(Exception e){
-						e.printStackTrace();
-						System.out.println("FAILED TO SEND RESULT SET TO : "+ sender);
-					}
 					
+					if(Tags.NONE.equals(isBoth))
+						sendToSender(cs, sender);
+					else{
+						sendToSender(cs, sender);
+						notifyQueryObservers(cs);
+					}
+		
 				}else				
 					notifyQueryObservers(cs);
 			}
@@ -309,6 +297,28 @@ public class Transaction implements Runnable, Subject{
 		endTransaction(Transaction.COMMIT);
 	}
 
+	public void sendToSender(CachedRowSetImpl cs, String sender){
+		
+		try{
+			Site s = Controller.searchForSite(sender);
+			Socket SOCK = new Socket(s.getIpadd(),Tags.PORT);
+			String sProtocol = Tags.RESULT_SET + Tags.PROTOCOL;
+			
+			OutputStream tempOut = SOCK.getOutputStream();
+		 	byte[] protocol = sProtocol.getBytes();
+		 	byte[] object = Controller.serialize(cs);
+		 	byte[] mail = Controller.byteConcat(protocol, object);
+		 	
+		 	tempOut.write(mail, 0, mail.length);
+		 	tempOut.flush();
+		 	SOCK.close();
+		 	
+			System.out.println("FINISH SENDING");
+		}catch(Exception e){
+			e.printStackTrace();
+			System.out.println("FAILED TO SEND RESULT SET TO : "+ sender);
+		}
+	}
 	@Override
 	public void registerObserver(Observer o) {
 		// TODO Auto-generated method stub

@@ -63,9 +63,9 @@ public class Client {
 			    switch(mailServer[0].trim()){
 			    	case Tags.RETURN_READ: 
 			    			/** query-> index 0   sender-> index 1**/
-			    			String mail[] = mailServer[1].split(Tags.PROTOCOL,2);
+			    			String mail[] = mailServer[1].split(Tags.PROTOCOL,3);
 			    			System.out.println("RECEIVED MAIL FROM--" + mail[1]);
-			    			c.RETURN_READ_EXECUTE(mail[0], mail[1]);
+			    			c.RETURN_READ_EXECUTE(mail[0], mail[1].trim(), mail[2].trim());
 			    		break;
 			    	case Tags.RESULT_SET:
 			    			System.out.println("PASOK RESULT SET");
