@@ -5,7 +5,8 @@ import java.util.ArrayList;
 public class Site {
 	private String ipadd;
 	private String name;
-	private ArrayList<Site> connectionList;
+	
+	public static ArrayList<Site> connectionList;
 
 
 	public Site(String ipadd, String name){
@@ -43,7 +44,7 @@ public class Site {
 		connectionList.add(newSite);
 	}
 	
-	public Site searchConnection(String username){
+	public static Site searchConnection(String username){
 		
 		Site s = null;
 		

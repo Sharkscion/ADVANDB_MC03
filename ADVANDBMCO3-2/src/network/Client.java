@@ -1,6 +1,7 @@
 package network;
 
 import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -49,6 +50,9 @@ public class Client {
 			    int bytesRead = input.read(scannedbytes,0,scannedbytes.length);
 			    int current = bytesRead;
 			    
+			    ObjectInputStream ois = new ObjectInputStream(input);
+			    System.out.println(ois.readObject());
+			    
 			    System.out.println("Client receive (continue to read bytes)");
 			    String InputCommand = new String(scannedbytes, "UTF-8");
 			    
@@ -56,9 +60,11 @@ public class Client {
 				
 			    String mailServer[] = InputCommand.split("#", 2);
 			    switch(mailServer[0]){
-			    	case Tags.READ_EXECUTE: 
-			    			System.out.println("RECEIVED MAIL--");
-			    			c.EXECUTE_READ_REQUEST(mailServer[1]);
+			    	case Tags.RETURN_READ: 
+			    			/** query-> index 0   sender-> index 1**/
+			    			String mail[] = mailServer[1].split("#",2);
+			    			System.out.println("RECEIVED MAIL FROM--" + mail[1]);
+			    			c.RETURN_READ_EXECUTE(mail[0], mail[1]);
 			    		break;
 			    	default: System.out.println("PROTOCOL NOT RECOGNIZED!");
 			    }

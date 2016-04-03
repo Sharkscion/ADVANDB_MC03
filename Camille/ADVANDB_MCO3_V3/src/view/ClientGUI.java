@@ -169,6 +169,7 @@ public class ClientGUI extends JFrame implements ActionListener{
         btnsPanel.setLayout(new FlowLayout(FlowLayout.TRAILING));
         
         btnRead = new JButton("Read");
+<<<<<<< HEAD
         btnRead.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -189,6 +190,12 @@ public class ClientGUI extends JFrame implements ActionListener{
 				transactionCounter++;
 			}
         });
+=======
+        btnRead.addActionListener(this);
+        
+        btnWrite = new JButton("Write");
+        btnWrite.addActionListener(this);
+>>>>>>> origin/master
         
         btnsPanel.add(btnRead);
         btnsPanel.add(btnWrite);
@@ -206,6 +213,7 @@ public class ClientGUI extends JFrame implements ActionListener{
         customScroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
         customPanel.add(customScroll);
         btnSubmitButton = new JButton("Submit");
+<<<<<<< HEAD
         btnSubmitButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -218,6 +226,9 @@ public class ClientGUI extends JFrame implements ActionListener{
 				//generate table
 			}
         });
+=======
+        btnSubmitButton.addActionListener(this);
+>>>>>>> origin/master
         customPanel.add(btnSubmitButton);
         
         return queryPanel;
@@ -459,7 +470,10 @@ public class ClientGUI extends JFrame implements ActionListener{
 	}
 	
 	public JPanel createAbortCommitPanel() {
+<<<<<<< HEAD
 		
+=======
+>>>>>>> origin/master
 		Border border = BorderFactory.createTitledBorder("Abort or Commit");
 		Border margin = BorderFactory.createEmptyBorder(10,10,10,10);
 		
@@ -563,6 +577,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 		bottomPanel.revalidate();
 		bottomPanel.repaint();
 	}
+<<<<<<< HEAD
 
 	
 
@@ -570,6 +585,10 @@ public class ClientGUI extends JFrame implements ActionListener{
 	
 	public String checkIfLocalOrGlobal(){
 		
+=======
+	
+	public String checkIfLocalOrGlobal(){
+>>>>>>> origin/master
 		String result = Tags.NONE;
 		
 		if(isPalawan)
@@ -585,6 +604,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 	
 	@Override
 	public void actionPerformed(ActionEvent e) {
+<<<<<<< HEAD
 		
 		if(e.getSource() == btnRead){
 			
@@ -618,5 +638,48 @@ public class ClientGUI extends JFrame implements ActionListener{
             tablePanelList.remove(index);
             System.out.println("Removed: " + (index+1));
         }
+=======
+		if(e.getSource() == btnRead){
+			String que = getReadQuery();
+			transactionList.append(transactionCounter + ". " + "Read " + que + "\n"); 
+			transactionCounter++;
+		} else if(e.getSource() == btnWrite) {
+			String que = getWriteQuery();
+			transactionList.append(transactionCounter + ". " + "Write " + que + "\n"); 
+			transactionCounter++;
+		} else if(e.getSource() == btnSubmit) {
+            resultsTabbedPane.removeAll();
+            tablePanelList.clear();
+            for(int i = 0; i < transactionList.getLineCount() - 1; i++){
+                TablePanel tablePanel= new TablePanel("");
+                tablePanel.setBackground(Color.WHITE);
+                resultsTabbedPane.addTab("Query", null, tablePanel, null);
+                resultsTabbedPane.setSelectedIndex(resultsTabbedPane.getTabCount()-1);
+                tablePanel.setCorrespondingTab(this,resultsTabbedPane.getSelectedIndex()); //select last one
+                tablePanelList.add(resultsTabbedPane.getSelectedIndex(),tablePanel);
+            }
+            
+            //CLEAR TRANSACTION LIST ??NOT SURE WHEN TO RESET
+            transactionQueries.clear();
+    		transactionCounter = 1;
+			transactionList.setText("");
+    		transactionList.repaint();
+    		transactionList.revalidate();
+        }
+		
+	}
+        
+    public void closeTab(int index) {
+        if(index != resultsTabbedPane.getTabCount() - 1) {
+            for(int i = index + 1; i < tablePanelList.size(); i++){
+                System.out.println("ITERATE: "+ (i)+"OLD: " + tablePanelList.get(i).getTabIndex()+ "NEW: " + (tablePanelList.get(i).getTabIndex()-1));
+                tablePanelList.get(i).changeTabIndex(tablePanelList.get(i).getTabIndex()-1);   
+            }
+        } 
+        resultsTabbedPane.remove(index);
+        tablePanelList.remove(index);
+        System.out.println("Removed: " + (index+1));
+    }
+>>>>>>> origin/master
 	
 }

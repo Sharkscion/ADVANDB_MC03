@@ -40,15 +40,22 @@ import javax.swing.border.CompoundBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 
+import model.Observer;
+import model.ResultSets;
 import model.Site;
 import model.Tags;
+import model.Transaction;
 import controller.Controller;
 
-public class ClientGUI extends JFrame implements ActionListener{
+public class ClientGUI extends JFrame implements ActionListener, Observer{
 	
-	private Site client;
-	private ResultSet rs;
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private Controller c;
+	private ResultSets rs;
 	
 	private JPanel topPanel, bottomPanel;
 	private JPanel queryPanel, abortCommitPanel, mainPanel, isolationPanel;
@@ -59,7 +66,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 	private JTextArea readTextArea, customTextArea, transactionList;
 	private JRadioButton rbAbort, rbCommit;
 	private JButton btnRead, btnWrite;
-	private JButton btnSubmitButton;
+	private JButton btnSubmitCustom;
 	private JPanel settingsPanel;
 	private JComboBox cbIsolationLevel, cbDefaultQueries;
 	private JPanel areaPanel;
@@ -68,6 +75,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 	
 	private boolean isPalawan;
 	private boolean isMarinduque;
+	private int isolationLevel;
 	
 	JScrollPane changeQueryScrollPane;
 	JPanel changeCenterQueryPanel;
@@ -75,15 +83,12 @@ public class ClientGUI extends JFrame implements ActionListener{
 	private HashMap<String, JTextField> queryComponents;
 	private JButton btnSubmit;
 	
-//	public ClientGUI(Controller c, ResultSet rs, Site client, ClientResponse clientResponse) {
-//		this.c = c;
-//		this.rs = rs;
-//		this.client = client;
-//		this.clientResponse = clientResponse;
-	
-	public ClientGUI() {
+
+	public ClientGUI(Controller con) {
 		
-//		signUp();
+		  this.c = con;
+		  this.c.registerObserver(this);
+		  
 		  try {
               UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
 		  }catch (Exception e) {}
@@ -186,9 +191,9 @@ public class ClientGUI extends JFrame implements ActionListener{
         customScroll = new JScrollPane(customTextArea);
         customScroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
         customPanel.add(customScroll);
-        btnSubmitButton = new JButton("Submit");
-        btnSubmitButton.addActionListener(this);
-        customPanel.add(btnSubmitButton);
+        btnSubmitCustom = new JButton("Submit");
+        btnSubmitCustom.addActionListener(this);
+        customPanel.add(btnSubmitCustom);
         
         return queryPanel;
 	}
@@ -320,10 +325,15 @@ public class ClientGUI extends JFrame implements ActionListener{
         abortCommitPanel.setBorder(new TitledBorder(null, "Abort or Commit", TitledBorder.LEADING, TitledBorder.TOP, null, null));
         
         ButtonGroup buttonGroup = new ButtonGroup();
+        
         rbAbort = new JRadioButton("Abort");
         rbAbort.setBackground(Color.WHITE);
+        rbAbort.addActionListener(this);
+        
         rbCommit = new JRadioButton("Commit");
         rbCommit.setBackground(Color.WHITE);
+        rbCommit.addActionListener(this);
+        
         buttonGroup.add(rbAbort);
         buttonGroup.add(rbCommit);
         
@@ -336,7 +346,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 	
 	public void createBottomPanel() {
 		bottomPanel = new JPanel();
-		bottomPanel.setPreferredSize(new Dimension(800, 350));
+		bottomPanel.setPreferredSize(new Dimension(590, 350));
 		bottomPanel.setLayout(new BorderLayout());
 		Border border = BorderFactory.createTitledBorder("Dataset");
 		Border margin = BorderFactory.createEmptyBorder(10,10,10,10);
@@ -355,12 +365,13 @@ public class ClientGUI extends JFrame implements ActionListener{
 		return tablePanel;
 	}
 	
-	public JTable createJTable(ResultSet rs) {
+	public JTable createJTable(ResultSets rs) {
 		JTable table = new JTable();
 		DefaultTableModel dataModel = new DefaultTableModel();
 		table.setModel(dataModel);
 		
 		try {
+						
 			ResultSetMetaData mdata = rs.getMetaData();
 			int colCount = mdata.getColumnCount();		
 			String[] colNames = getColumnNames(colCount, mdata);
@@ -372,6 +383,8 @@ public class ClientGUI extends JFrame implements ActionListener{
 				}
 				dataModel.addRow(rowData);
 			}
+			
+			
 		} catch (SQLException e) {}
 		
 		return table;
@@ -401,21 +414,7 @@ public class ClientGUI extends JFrame implements ActionListener{
 		} catch (ClassCastException e) {
 		}
 	}
-	
-	public void updateTable(ResultSet rs) {
-		bottomPanel.removeAll();
-		JTable table = createJTable(rs);
-		JScrollPane pane = new JScrollPane(table);
-		updateRowHeights(table);
-		bottomPanel.add(pane, BorderLayout.CENTER);
-		bottomPanel.revalidate();
-		bottomPanel.repaint();
-	}
 
-	
-
-	
-	
 	public String checkIfLocalOrGlobal(){
 		
 		String result = Tags.NONE;
@@ -434,11 +433,34 @@ public class ClientGUI extends JFrame implements ActionListener{
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		
-		if(e.getSource() == btnRead){
-			
-			
+		if(e.getSource() == btnSubmitCustom){
+			System.out.println("READ SUBMIT CUSTOM");
+			//String schema = checkIfLocalOrGlobal();
+			//String query = 
+	
+		//public Transaction(String protocolTag, String name, String schema, String tableName,String query, boolean isWrite){
+
+			//Transaction t = new Transaction();
+			String message = customTextArea.getText() + "#" + checkIfLocalOrGlobal();
+			c.SEND_READ_REQUEST(message);		
+		}else if (e.getSource() == rbAbort){
+			isolationLevel = Transaction.ABORT;
+		}else if (e.getSource() == rbCommit){
+			isolationLevel = Transaction.COMMIT;
 		}
-		
+	}
+
+	@Override
+	public void update() {
+		// TODO Auto-generated method stub
+		rs = c.getResultSets();
+		bottomPanel.removeAll();
+		JTable table = createJTable(rs);
+		JScrollPane pane = new JScrollPane(table);
+		updateRowHeights(table);
+		bottomPanel.add(pane, BorderLayout.CENTER);
+		bottomPanel.revalidate();
+		bottomPanel.repaint();
 	}
 	
 }
