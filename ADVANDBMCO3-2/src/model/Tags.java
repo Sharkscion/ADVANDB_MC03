@@ -16,7 +16,6 @@ public class Tags {
 	
 	public static final String PROTOCOL ="%";
 	
-	
 	public static final String PALAWAN = "PALAWAN";
 	public static final String MARINDUQUE = "MARINDUQUE";
 	public static final String CENTRAL = "CENTRAL";

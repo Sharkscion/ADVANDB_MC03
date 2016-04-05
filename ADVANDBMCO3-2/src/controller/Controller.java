@@ -20,6 +20,7 @@ import model.Site;
 import model.Subject;
 import model.Tags;
 import model.Transaction;
+import model.TransactionMail;
 
 import com.sun.rowset.CachedRowSetImpl;
 
@@ -63,9 +64,17 @@ public class Controller implements Subject, QueryObserver
 		owner.addConnection(newSite);
 	}
 	
-	public void EXECUTE_QUERY_REQUEST(ArrayList<Transaction> tList){
+	public void EXECUTE_QUERY_REQUEST(ArrayList<TransactionMail> tList){
 		System.out.println("EXECUTING LOCAL QUERY READ REQUEST: "+ owner.getName());
-		Thread T = new Thread(tList.get(0));
+		TransactionMail tm = tList.get(0);
+		Transaction t = new Transaction(tm.getQuery(), tm.getReceiver());		
+		t.setSender(tm.getSender());
+		t.setIsolation_level(tm.getISO_LEVEL());
+		t.setTableName(tm.getTableName());
+		t.setTran_action(tm.getTranAction());
+		t.setWrite(tm.isWrite());
+		
+		Thread T = new Thread(t);
 		T.start();
 	}
 	
@@ -73,7 +82,7 @@ public class Controller implements Subject, QueryObserver
 	public void RETURN_READ_EXECUTE(byte[] receiveByte){
 		System.out.println("EXECUTING RETURN QUERY");
 	
-		ArrayList<Transaction> tList;
+		ArrayList<TransactionMail> tList;
 		try {
 			
 			byte[] byteArr = new byte[65500];
@@ -82,9 +91,18 @@ public class Controller implements Subject, QueryObserver
 			
 			System.out.println("writeFile (bytes received: " + bytesRead + ")");
 			
-			tList = (ArrayList<Transaction>) deserialize(byteArr);
+			tList = (ArrayList<TransactionMail>) deserialize(byteArr);
 			System.out.println("STARTING THREAD");
-			Thread T = new Thread(tList.get(0));
+			
+			TransactionMail tm = tList.get(0);
+			Transaction t = new Transaction(tm.getQuery(), tm.getReceiver());		
+			t.setSender(tm.getSender());
+			t.setIsolation_level(tm.getISO_LEVEL());
+			t.setTableName(tm.getTableName());
+			t.setTran_action(tm.getTranAction());
+			t.setWrite(tm.isWrite());
+			
+			Thread T = new Thread(t);
 			T.start();
 			
 		} catch (ClassNotFoundException e) {
@@ -147,7 +165,7 @@ public class Controller implements Subject, QueryObserver
 	
 
 	
-	public void SEND_QUERY_TO_RECEIVER(String mail, ArrayList<Transaction> tList, Site receiver) throws UnknownHostException, IOException{
+	public void SEND_QUERY_TO_RECEIVER(String mail, ArrayList<TransactionMail> tList, Site receiver) throws UnknownHostException, IOException{
 	
 		try{
 			System.out.println("TO BE SENT TO: " + receiver.getName());
@@ -155,7 +173,7 @@ public class Controller implements Subject, QueryObserver
 			byte[] mailByte = mail.getBytes();
 			
 			/**change the transaction receiver since hndi on si central**/
-			for(Transaction t : tList)
+			for(TransactionMail t : tList)
 				t.setReceiver(receiver);
 			
 			byte[] object = serialize(tList);
@@ -178,7 +196,7 @@ public class Controller implements Subject, QueryObserver
 	// Send READ REQUEST NOTIFICATION
 	// first# -> query
 	// second# -> area
-	public void SEND_QUERY_REQUEST(ArrayList<Transaction> tList)
+	public void SEND_QUERY_REQUEST(ArrayList<TransactionMail> tList)
 	{
 		rsList = new ArrayList<CachedRowSetImpl>();
 		

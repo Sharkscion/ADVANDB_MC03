@@ -9,6 +9,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Reader;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.net.Socket;
 import java.net.URL;
@@ -49,7 +50,7 @@ import com.sun.rowset.CachedRowSetImpl;
 
 import controller.Controller;
 
-public class Transaction implements Runnable, Subject{
+public class Transaction implements Runnable, Subject, Serializable{
 	public static final String ISO_READ_UNCOMMITTED = "READ UNCOMMITTED";
 	public static final String ISO_READ_COMMITTED = "READ COMMITTED";
 	public static final String ISO_REPEATABLE_READ = "REPEATABLE READ";

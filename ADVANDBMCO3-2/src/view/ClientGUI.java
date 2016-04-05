@@ -46,6 +46,7 @@ import model.ResultSets;
 import model.Site;
 import model.Tags;
 import model.Transaction;
+import model.TransactionMail;
 import controller.Controller;
 
 public class ClientGUI extends JFrame implements ActionListener, Observer{
@@ -53,7 +54,7 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 	private Site client;
 	private Controller c;
 	private ArrayList<CachedRowSetImpl> rsList;
-	private ArrayList<Transaction> tranList;
+	private ArrayList<TransactionMail> tranList;
 	private String ISO_LEVEL;
 	private int TRAN_ACTION;
 	
@@ -84,6 +85,7 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 	public ClientGUI(Controller con) {
 
 		this.c = con;
+		this.tranList = new ArrayList<TransactionMail>();
 		
 		try {
 			UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
@@ -548,6 +550,7 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 
 		}else if(e.getSource() == btnSubmit){
 			
+			addTransaction("SELECT * FROM numbers;", false);
 			c.SEND_QUERY_REQUEST(tranList);
 			
 			resultsTabbedPane.removeAll();
@@ -584,11 +587,11 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 
 	public void addTransaction(String query, boolean isWrite){
 		
-		Transaction t = new Transaction(query, c.searchForSite(Tags.CENTRAL));
+		TransactionMail t = new TransactionMail(query, c.searchForSite(Tags.CENTRAL));
 		t.setSender(c.getOwner());
-		t.setIsolation_level(ISO_LEVEL);
+		t.setISO_LEVEL(ISO_LEVEL);
 		t.setTableName("numbers");
-		t.setTran_action(TRAN_ACTION);
+		t.setTranAction(TRAN_ACTION);
 		t.setWrite(isWrite);
 		
 		tranList.add(t);
