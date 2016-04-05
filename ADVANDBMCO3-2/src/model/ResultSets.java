@@ -23,7 +23,7 @@ public class ResultSets implements Serializable {
 	 
 	 public boolean next() {
        try {
-    	   if(!current.isLast()){
+    	   if(!rsList.isEmpty()){
     		   if (current.next()) {
     		       return true;
     		   }else if (!rsList.isEmpty()) {

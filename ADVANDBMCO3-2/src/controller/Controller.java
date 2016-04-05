@@ -6,9 +6,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 
 import model.Observer;
@@ -43,30 +45,82 @@ public class Controller implements Subject, QueryObserver
 		obList = new ArrayList<Observer>();
 		// instantiate database manager
 	}
-	
-	public void setResultSets(ResultSets rs){
-		this.rs =rs;
+
+
+	public Site getOwner(){
+		return owner;
 	}
-	public ResultSets getResultSets(){
-		return this.rs;
+	public void setResultSets(ArrayList<CachedRowSetImpl> rs){
+		this.rsList = rs;
+	}
+	public ArrayList<CachedRowSetImpl> getResultSets(){
+		return this.rsList;
 	}
 
-	public void add(String ip, String name)
-	{
+	public void add(String ip, String name){
 		Site newSite = new Site(ip,name);
 		System.out.println("NEW SITE: "+ newSite.getName());
 		owner.addConnection(newSite);
 	}
 	
-	public void EXECUTE_READ_REQUEST(String query){
-		System.out.println("EXECUTING QUERY READ REQUEST: "+ query);
-		
-		t = new Transaction(query, Tags.NONE, Tags.NONE);
-		t.registerObserver(this);
-		t.setTableName("numbers");
-		t.setIsolation_level(Transaction.ISO_SERIALIZABLE);
-		Thread T = new Thread(t);
+	public void EXECUTE_QUERY_REQUEST(ArrayList<Transaction> tList){
+		System.out.println("EXECUTING LOCAL QUERY READ REQUEST: "+ owner.getName());
+		Thread T = new Thread(tList.get(0));
 		T.start();
+	}
+	
+	
+	public void RETURN_READ_EXECUTE(byte[] receiveByte){
+		System.out.println("EXECUTING RETURN QUERY");
+	
+		ArrayList<Transaction> tList;
+		try {
+			
+			byte[] byteArr = new byte[65500];
+			InputStream is = new ByteArrayInputStream(receiveByte);
+			int bytesRead = is.read(byteArr, 0, byteArr.length);
+			
+			System.out.println("writeFile (bytes received: " + bytesRead + ")");
+			
+			tList = (ArrayList<Transaction>) deserialize(byteArr);
+			System.out.println("STARTING THREAD");
+			Thread T = new Thread(tList.get(0));
+			T.start();
+			
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public void RECEIVE_RESULT_SET(byte[] resultset){
+		try {
+			
+			byte[] mybytearray = new byte[65500];							// Creates a byte array
+			InputStream is = new ByteArrayInputStream(resultset);				// Creates an input stream from the given bytes
+			int bytesRead = is.read(mybytearray, 0, mybytearray.length);	// Reads bytes from bytes to mybytearray and stores number of bytes read
+			
+			System.out.println("writeFile (bytes received: " + bytesRead + ")");
+		
+			CachedRowSetImpl cas = (CachedRowSetImpl) deserialize(mybytearray);
+			
+			if(cas == null)
+				System.out.println("NULL SI CRS :(");
+			else{
+				updateResultSet(cas);
+				notifyObservers();
+			}
+				
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	public static byte[] byteConcat(byte[] A, byte[] B) {
@@ -89,152 +143,91 @@ public class Controller implements Subject, QueryObserver
 	    ObjectInputStream is = new ObjectInputStream(in);
 	    return is.readObject();
 	}
-		
-	public void RETURN_READ_EXECUTE(String query , String sender, String isBoth){
-		
-		System.out.println("RECEIVED READ REQUEST FROM$$: " +sender+"%%#");
-		t = new Transaction(query, sender, isBoth);
-		t.registerObserver(this);
-		t.setTableName("numbers");
-		t.setIsolation_level(Transaction.ISO_SERIALIZABLE);
-		Thread T = new Thread(t);
-		T.start();
-		
-	}
 	
-	public void RECEIVE_RESULT_SET(byte[] resultset){
-		try {
+	
+
+	
+	public void SEND_QUERY_TO_RECEIVER(String mail, ArrayList<Transaction> tList, Site receiver) throws UnknownHostException, IOException{
+	
+		try{
+			System.out.println("TO BE SENT TO: " + receiver.getName());
+			byte[] mailQuery = null;
+			byte[] mailByte = mail.getBytes();
 			
-			byte[] mybytearray = new byte[65500];							// Creates a byte array
-			InputStream is = new ByteArrayInputStream(resultset);				// Creates an input stream from the given bytes
-			int bytesRead = is.read(mybytearray, 0, mybytearray.length);	// Reads bytes from bytes to mybytearray and stores number of bytes read
+			/**change the transaction receiver since hndi on si central**/
+			for(Transaction t : tList)
+				t.setReceiver(receiver);
 			
+			byte[] object = serialize(tList);
+			mailQuery = byteConcat(mailByte, object);
 			
-			System.out.println("writeFile (bytes received: " + bytesRead + ")");
-		
-			CachedRowSetImpl cas = (CachedRowSetImpl) deserialize(mybytearray);
-			
-			if(cas == null)
-				System.out.println("NULL SI CRS :(");
-			else{
-				updateResultSet(cas);
-				notifyObservers();
-			}
-				
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
+			Socket SOCK = new Socket(receiver.getIpadd(),Tags.PORT);
+			OutputStream tempOut = SOCK.getOutputStream();
+		 	tempOut.write(mailQuery, 0, mailQuery.length);
+		 	tempOut.flush();
+		 	SOCK.close();
+		 	
+			System.out.println("FINISH SENDING TO: "+ receiver.getName());
+		}catch(Exception e){
 			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("FAILED TO SEND RESULT SET TO : "+ receiver.getName());
 		}
-	}
-	
-	public void SEND_READ_TO_RECEIVER(String mail, Site receiver, String isBoth) throws UnknownHostException, IOException{
-			//System.out.println("");
-			
-			SOCK = new Socket(receiver.getIpadd(), Tags.PORT);
-			OUT = new PrintWriter(SOCK.getOutputStream());
-			OUT.println(mail+Tags.PROTOCOL+isBoth);
-			OUT.flush();
 	}
 	
 	
 	// Send READ REQUEST NOTIFICATION
 	// first# -> query
 	// second# -> area
-	public void SEND_READ_REQUEST(String readRequest)
+	public void SEND_QUERY_REQUEST(ArrayList<Transaction> tList)
 	{
 		rsList = new ArrayList<CachedRowSetImpl>();
 		
-		System.out.println("==STARTING READ REQUEST==");
+		System.out.println("==STARTING SENDING QUERY REQUEST==");
 		Site receiver = null;
-		String message[] = readRequest.split(Tags.PROTOCOL, 2);
-		String mail = "";
+		String mail = Tags.RETURN_READ + Tags.PROTOCOL + owner.getName() + Tags.PROTOCOL;
 		
-		if(!Tags.NONE.equals(message[1])){
-			
-			//mailExecute = Tags.EXECUTE_READ+"#"+message[0]+"#"+
-			mail = Tags.RETURN_READ + Tags.PROTOCOL+message[0]+ Tags.PROTOCOL + owner.getName();
-			System.out.println(mail + "<-MAIL");
-			switch(owner.getName()){
-				case Tags.CENTRAL: 
-						if(Tags.CENTRAL.equals(message[1]))
-							EXECUTE_READ_REQUEST(message[0]);
-						 break;
-				case Tags.PALAWAN:
-						if(Tags.PALAWAN.equals(message[1]))
-							EXECUTE_READ_REQUEST(message[0]);
-						else if(Tags.MARINDUQUE.equals(message[1])){
-							receiver = owner.searchConnection(Tags.CENTRAL);
-							
-							try {
-								SEND_READ_TO_RECEIVER(mail, receiver, Tags.NONE);
-							} catch (Exception e){
-								System.out.println(receiver.getName()+ " NOT CONNECTED!");
-								receiver = owner.searchConnection(Tags.MARINDUQUE);
-								try {
-									SEND_READ_TO_RECEIVER(mail, receiver, Tags.NONE);
-								} catch (Exception e1){
-									System.out.println(receiver.getName() + " NOT CONNECTED!");
-								}
-							}
-						}else if(Tags.CENTRAL.equals(message[1])){
-							receiver = owner.searchConnection(Tags.CENTRAL);
-							try{
-								SEND_READ_TO_RECEIVER(mail, receiver, Tags.NONE);
-							}catch(Exception e){
-								
-								System.out.println("CENTRAL NOT CONNECTED!");
-								receiver = owner.searchConnection(Tags.MARINDUQUE);
-								try {
-									SEND_READ_TO_RECEIVER(mail, receiver, Tags.BOTH);
-								} catch (Exception e1){
-									System.out.println("MARINDUQUE NOT CONNECTED!");
-								}
-							}
-						} break;
-				case Tags.MARINDUQUE:
-					if(Tags.MARINDUQUE.equals(message[1]))
-						EXECUTE_READ_REQUEST(message[0]);
-					else if(Tags.PALAWAN.equals(message[1])){
-						receiver = owner.searchConnection(Tags.CENTRAL);
-						
-						try {
-							SEND_READ_TO_RECEIVER(mail, receiver, Tags.NONE);
-						} catch (Exception e){
-							System.out.println(receiver.getName()+ " NOT CONNECTED!");
-							receiver = owner.searchConnection(Tags.PALAWAN);
-							try {
-								SEND_READ_TO_RECEIVER(mail, receiver, Tags.NONE);
-							} catch (Exception e1){
-								System.out.println(receiver.getName() + " NOT CONNECTED!");
-							}
-						}
-					}else if(Tags.CENTRAL.equals(message[1])){
-						receiver = owner.searchConnection(Tags.CENTRAL);
-						try{
-							SEND_READ_TO_RECEIVER(mail, receiver, Tags.NONE);
-						}catch(Exception e){
-							
-							System.out.println(receiver.getName()+ " NOT CONNECTED!");
-							receiver = owner.searchConnection(Tags.PALAWAN);
-							try {
-								SEND_READ_TO_RECEIVER(mail, receiver, Tags.BOTH);
-							} catch (Exception e1){
-								System.out.println(receiver.getName() + " NOT CONNECTED!");
-							}
-						}
-					} break;	
-				default: System.out.println("UNRECOGNIZED USER");
-			}
-		}else{
-			EXECUTE_READ_REQUEST(message[0]);
+		switch(owner.getName()){
+			case Tags.CENTRAL: EXECUTE_QUERY_REQUEST(tList); break;
+			case Tags.PALAWAN:
+					  receiver = owner.searchConnection(Tags.CENTRAL);
+					  try{
+						  SEND_QUERY_TO_RECEIVER(mail, tList, receiver);
+					  }catch(Exception e){
+						  System.out.println(Tags.CENTRAL + " IS NOT CONNECTED!");
+						  
+						  EXECUTE_QUERY_REQUEST(tList);
+						  receiver = owner.searchConnection(Tags.MARINDUQUE);
+						  
+						  try{
+							  SEND_QUERY_TO_RECEIVER(mail, tList, receiver);
+						  }catch(Exception e1){
+							  System.out.println(Tags.MARINDUQUE+" IS NOT CONNECTED!");
+						  }  
+					  }break;
+			case Tags.MARINDUQUE:
+					  receiver = owner.searchConnection(Tags.CENTRAL);
+					  try{
+						  SEND_QUERY_TO_RECEIVER(mail, tList, receiver);
+					  }catch(Exception e){
+						  System.out.println(Tags.CENTRAL + " IS NOT CONNECTED!");
+						  
+						  EXECUTE_QUERY_REQUEST(tList);
+						  receiver = owner.searchConnection(Tags.PALAWAN);
+						  
+						  try{
+							  SEND_QUERY_TO_RECEIVER(mail, tList, receiver);
+						  }catch(Exception e1){
+							  System.out.println(Tags.PALAWAN+" IS NOT CONNECTED!");
+						  } 
+					  }break;
+						  
+			default: System.out.println("SITE NOT RECOGNIZED!");	  
 		}
 		
 		System.out.println("==READ REQUEST END==");
 	 }
 
+	
 	@Override
 	public void registerObserver(Observer o) {
 		// TODO Auto-generated method stub
@@ -252,11 +245,13 @@ public class Controller implements Subject, QueryObserver
 		// TODO Auto-generated method stub
 		
 		if(rsList != null){
-			rs = new ResultSets(rsList);
+			System.out.println("BAGO LIST :(");
+			System.out.println("SIZE OF RES LIST: "+ rsList.size());
 			for(Observer o: obList){
 			    System.out.println("UPDATING TABLE");
 	            o.update();
 	        }
+			rsList.clear();
 		}
 	  
 	}
@@ -265,7 +260,6 @@ public class Controller implements Subject, QueryObserver
 	public void update() {
 		// TODO Auto-generated method stub
 		notifyObservers();
-		//setResultSet();
 	}
 
 	@Override
@@ -277,7 +271,12 @@ public class Controller implements Subject, QueryObserver
 	@Override
 	public void updateResultSet(CachedRowSetImpl rs) {
 		System.out.println("FINISH EXECUTING QUERY READ REQUEST");
-		System.out.println("SETTING RESULT SET");
+		try {
+			System.out.println("ADDING RESULT SET : "+ rs.getFetchSize());
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		rsList.add(rs);
 	}
 	

@@ -50,27 +50,26 @@ public class Client {
 						
 				int bytesRead = input.read(scannedbytes,0,scannedbytes.length);
 			    int current = bytesRead;
-			    
-			    
-			    System.out.println("HELLO");
+			   
 			    System.out.println("Client receive (continue to read bytes)");
+			    
 			    String InputCommand = new String(scannedbytes, "UTF-8");
-			    
-			    
+			    int from = InputCommand.substring(0,6).getBytes().length;
+    			int to = InputCommand.getBytes().length - from;
+    			
 			    System.out.println("INPUT COMMAND: "+InputCommand);			
 			    String mailServer[] = InputCommand.split(Tags.PROTOCOL, 2);
+			    
 			    System.out.println("MAIL SERVER PROTOCOL: "+mailServer[0]);
+			    
 			    switch(mailServer[0].trim()){
 			    	case Tags.RETURN_READ: 
 			    			/** query-> index 0   sender-> index 1**/
-			    			String mail[] = mailServer[1].split(Tags.PROTOCOL,3);
-			    			System.out.println("RECEIVED MAIL FROM--" + mail[1]);
-			    			c.RETURN_READ_EXECUTE(mail[0], mail[1].trim(), mail[2].trim());
+			    		    c.RETURN_READ_EXECUTE(Arrays.copyOfRange(scannedbytes, from, to));
 			    		break;
 			    	case Tags.RESULT_SET:
 			    			System.out.println("PASOK RESULT SET");
-			    			int from = InputCommand.substring(0,6).getBytes().length;
-			    			int to = InputCommand.getBytes().length - from;
+			    			
 			    			c.RECEIVE_RESULT_SET(Arrays.copyOfRange(scannedbytes, from, to));
 			    			break;
 			    	default: System.out.println("PROTOCOL NOT RECOGNIZED!");

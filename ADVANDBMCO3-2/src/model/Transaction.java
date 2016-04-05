@@ -50,10 +50,10 @@ import com.sun.rowset.CachedRowSetImpl;
 import controller.Controller;
 
 public class Transaction implements Runnable, Subject{
-	public static final int ISO_READ_UNCOMMITTED = 1;
-	public static final int ISO_READ_COMMITTED = 2;
-	public static final int ISO_REPEATABLE_READ = 3;
-	public static final int ISO_SERIALIZABLE = 4;
+	public static final String ISO_READ_UNCOMMITTED = "READ UNCOMMITTED";
+	public static final String ISO_READ_COMMITTED = "READ COMMITTED";
+	public static final String ISO_REPEATABLE_READ = "REPEATABLE READ";
+	public static final String ISO_SERIALIZABLE = "SERIALIZABLE";
 	
 	public static final int COMMIT = 10;
 	public static final int ROLLBACK = 20;
@@ -66,18 +66,19 @@ public class Transaction implements Runnable, Subject{
 	
 	
 	private String name;
-	private int isolation_level;
+	private String isolation_level;
 	private PreparedStatement preparedStatement;
 	private DBConnection dbCon;
 	private Connection con;
-	private BufferedWriter fWriter;
 	private String schema;
 	private String tableName;
 	private boolean isWrite;
-	private String protocolTag;
 	private String query;
-	private String sender;
-	private String isBoth;
+	
+	private Site receiver;
+	private Site sender;
+
+	private int tran_action;
 	private ArrayList<QueryObserver> obList;
 	private CachedRowSetImpl cs;
 	private ResultSet rs;
@@ -92,7 +93,6 @@ public class Transaction implements Runnable, Subject{
 		rs = null;
 		cs =null;
 		this.query = query;
-		this.protocolTag = protocolTag;
 		this.schema = schema;
 		this.isWrite = isWrite;
 		this.tableName = tableName;
@@ -100,21 +100,52 @@ public class Transaction implements Runnable, Subject{
 		isolation_level = ISO_SERIALIZABLE;
 	}
 	
-	public Transaction(String query, String sender, String isBoth){
+	public Transaction(String query, Site receiver){
 		dbCon = new DBConnection();
 		con = dbCon.getConnection();
 		preparedStatement = null;
 		obList = new ArrayList<QueryObserver>();
 		rs = null;
 		cs = null;
-		this.sender = sender;
+		this.receiver = receiver;
 		this.query = query;
-		this.isBoth = isBoth;
 		isolation_level = ISO_SERIALIZABLE;
+	}
+	
+	public Site getReceiver() {
+		return receiver;
+	}
+
+	public void setReceiver(Site receiver) {
+		this.receiver = receiver;
+	}
+	
+	public boolean isWrite() {
+		return isWrite;
+	}
+
+	public void setWrite(boolean isWrite) {
+		this.isWrite = isWrite;
+	}
+	
+	public int getTran_action() {
+		return tran_action;
+	}
+
+	public void setTran_action(int tran_action) {
+		this.tran_action = tran_action;
 	}
 	
 	public String getTableName() {
 		return tableName;
+	}
+	
+	public Site getSender() {
+		return sender;
+	}
+
+	public void setSender(Site sender) {
+		this.sender = sender;
 	}
 
 	public void setTableName(String tableName) {
@@ -134,7 +165,7 @@ public class Transaction implements Runnable, Subject{
 	public void setName(String name) {
 		this.name = name;
 	}
-	public int getIsolation_level() {
+	public String getIsolation_level() {
 		return isolation_level;
 	}
 	
@@ -146,7 +177,7 @@ public class Transaction implements Runnable, Subject{
 		this.cs = cs;
 	}
 	
-	public void setIsolation_level(int isolation_level) {
+	public void setIsolation_level(String isolation_level) {
 		
 		System.out.println("Setting isolation level for Transaction "+name+" to: " + isolation_level);
 		this.isolation_level = isolation_level;
@@ -205,11 +236,11 @@ public class Transaction implements Runnable, Subject{
 		}
 	}
 	
-	public void endTransaction(int action){
+	public void endTransaction(){
 		
 		System.out.println("End Transaction: " + name + "\n");
 		
-		if(action == COMMIT){
+		if(tran_action == COMMIT){
 			try {
 				con.commit();
 				notifyObservers();
@@ -217,7 +248,7 @@ public class Transaction implements Runnable, Subject{
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		}else if(action == ABORT){
+		}else if(tran_action == ABORT){
 			try {
 				System.out.println("Aborting Transaction "+name+"...");
 				con.rollback();
@@ -269,23 +300,13 @@ public class Transaction implements Runnable, Subject{
 						break;
 				}
 				
-				System.out.println("SENDER: "+sender);
-				if(!Tags.NONE.equals(sender)){
-					
-					if(Tags.NONE.equals(isBoth))
-						sendToSender(cs, sender);
-					else{
-						
-						if(Tags.PALAWAN.equals(sender))
-							sendToSender(cs, Tags.MARINDUQUE);
-						else if(Tags.MARINDUQUE.equals(sender))
-							sendToSender(cs, Tags.MARINDUQUE);
-						
-						notifyQueryObservers(cs);
-					}
-		
-				}else				
-					notifyQueryObservers(cs);
+				System.out.println("TRAN RECEIVER: "+ receiver.getName());
+				System.out.println("TRAN SENDER: "+sender.getName());
+				
+				if(receiver.equals(sender))// meaning central siya
+					notifyQueryObservers(cs); 
+				else
+					sendToSender(cs, receiver);	
 			}
 			
 		}catch(Exception e){
@@ -299,13 +320,13 @@ public class Transaction implements Runnable, Subject{
 		// TODO Auto-generated method stub
 		beginTransaction();
 		runTransaction();
-		endTransaction(Transaction.COMMIT);
+		endTransaction();
 	}
 
-	public void sendToSender(CachedRowSetImpl cs, String sender){
+	public void sendToSender(CachedRowSetImpl cs, Site sender){
 		
 		try{
-			Site s = Controller.searchForSite(sender);
+			Site s = sender;
 			System.out.println("TO BE SENT TO: ");
 			Socket SOCK = new Socket(s.getIpadd(),Tags.PORT);
 			String sProtocol = Tags.RESULT_SET + Tags.PROTOCOL;
@@ -349,7 +370,8 @@ public class Transaction implements Runnable, Subject{
 	@Override
 	public void notifyQueryObservers(CachedRowSetImpl rs) {
 		// TODO Auto-generated method stub
-		for(QueryObserver o: obList)
+		for(QueryObserver o: obList){
 			o.updateResultSet(rs);
+		}
 	}
 }
