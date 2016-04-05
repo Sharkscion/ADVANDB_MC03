@@ -1,7 +1,9 @@
 package model;
 
+import java.io.Serializable;
 
-public class TransactionMail {
+
+public class TransactionMail implements Serializable{
 	
 	private String query;
 	private Site sender;

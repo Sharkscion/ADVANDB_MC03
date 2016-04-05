@@ -69,6 +69,9 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 	private JButton btnRead, btnWrite;
 	private JButton btnSubmitButton;
 	private JPanel settingsPanel;
+	private JPanel areaPanel;
+	private JCheckBox chckbxPalawan;
+	private JCheckBox chckbxMarinduque;
 	private JComboBox cbIsolationLevel, cbDefaultQueries;
 
 	private boolean isPalawan;
@@ -85,7 +88,10 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 	public ClientGUI(Controller con) {
 
 		this.c = con;
+		this.c.registerObserver(this);
 		this.tranList = new ArrayList<TransactionMail>();
+		this.ISO_LEVEL = "";
+		this.TRAN_ACTION = Transaction.COMMIT;
 		
 		try {
 			UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
@@ -382,10 +388,52 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 		settingsPanel.setLayout(new BorderLayout(0, 0));
 
 		settingsPanel.add(createIsolationPanel(), BorderLayout.NORTH);
+		settingsPanel.add(createAreaPanel(), BorderLayout.CENTER);
 		settingsPanel.add(createAbortCommitPanel(), BorderLayout.SOUTH);
+		
 		return settingsPanel;
 	}
 
+	public JPanel createAreaPanel(){			
+			areaPanel = new JPanel();
+			areaPanel.setBackground(Color.WHITE);
+			areaPanel.setBorder(new TitledBorder(null, "Area", TitledBorder.LEADING, TitledBorder.TOP, null, null));
+			areaPanel.setLayout(new BorderLayout(0, 0));
+			
+			chckbxPalawan = new JCheckBox("Palawan");
+			chckbxPalawan.setBackground(Color.WHITE);
+			chckbxPalawan.addItemListener(new ItemListener() {
+				
+				@Override
+				public void itemStateChanged(ItemEvent e) {
+					// TODO Auto-generated method stub
+				   if(e.getStateChange() == ItemEvent.SELECTED) {
+			            isPalawan = true;
+			        } else {
+			        	isPalawan = false;
+			        };
+				}
+			});
+			areaPanel.add(chckbxPalawan);
+			
+			chckbxMarinduque = new JCheckBox("Marinduque");
+			chckbxMarinduque.setBackground(Color.WHITE);
+			chckbxMarinduque.addItemListener(new ItemListener() {
+				
+				@Override
+				public void itemStateChanged(ItemEvent e) {
+					// TODO Auto-generated method stub
+					if(e.getStateChange() == ItemEvent.SELECTED) {
+			            isMarinduque = true;
+			        } else {
+			        	isMarinduque = false;
+			        };
+				}
+			});
+			areaPanel.add(chckbxMarinduque, BorderLayout.NORTH);
+			return areaPanel;
+	}
+		
 	public JPanel createIsolationPanel() {
 		Border border = BorderFactory.createTitledBorder("Isolation Level");
 		Border margin = BorderFactory.createEmptyBorder(10,10,10,10);
@@ -587,8 +635,24 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 
 	public void addTransaction(String query, boolean isWrite){
 		
-		TransactionMail t = new TransactionMail(query, c.searchForSite(Tags.CENTRAL));
+		Site receiver = null;
+		
+		String siteChosen = checkIfLocalOrGlobal();
+		
+		if(c.getOwner().getName().equals(siteChosen))
+			receiver = c.getOwner();
+		else if(c.getOwner().getName().equals(Tags.CENTRAL))
+			receiver = c.searchForSite(Tags.CENTRAL);
+		else 
+			receiver = c.searchForSite(siteChosen);
+		
+		System.out.println("SITE CHOSEN: "+siteChosen);
+		TransactionMail t = new TransactionMail(query, receiver);
 		t.setSender(c.getOwner());
+		
+		if(ISO_LEVEL.equals(""))
+			ISO_LEVEL = cbIsolationLevel.getSelectedItem().toString();
+		
 		t.setISO_LEVEL(ISO_LEVEL);
 		t.setTableName("numbers");
 		t.setTranAction(TRAN_ACTION);

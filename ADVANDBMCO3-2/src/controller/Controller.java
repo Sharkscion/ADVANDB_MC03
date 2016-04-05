@@ -73,6 +73,7 @@ public class Controller implements Subject, QueryObserver
 		t.setTableName(tm.getTableName());
 		t.setTran_action(tm.getTranAction());
 		t.setWrite(tm.isWrite());
+		t.registerObserver(this);
 		
 		Thread T = new Thread(t);
 		T.start();
@@ -96,11 +97,16 @@ public class Controller implements Subject, QueryObserver
 			
 			TransactionMail tm = tList.get(0);
 			Transaction t = new Transaction(tm.getQuery(), tm.getReceiver());		
+			
+			System.out.println("ReCEIVER: "+ tm.getReceiver().getName());
+			System.out.println("SENDER: "+tm.getSender().getName() + " IP:"+tm.getSender().getIpadd()+"#");
+			
 			t.setSender(tm.getSender());
 			t.setIsolation_level(tm.getISO_LEVEL());
 			t.setTableName(tm.getTableName());
 			t.setTran_action(tm.getTranAction());
 			t.setWrite(tm.isWrite());
+			t.registerObserver(this);
 			
 			Thread T = new Thread(t);
 			T.start();
@@ -161,10 +167,7 @@ public class Controller implements Subject, QueryObserver
 	    ObjectInputStream is = new ObjectInputStream(in);
 	    return is.readObject();
 	}
-	
-	
 
-	
 	public void SEND_QUERY_TO_RECEIVER(String mail, ArrayList<TransactionMail> tList, Site receiver) throws UnknownHostException, IOException{
 	
 		try{
@@ -202,7 +205,7 @@ public class Controller implements Subject, QueryObserver
 		
 		System.out.println("==STARTING SENDING QUERY REQUEST==");
 		Site receiver = null;
-		String mail = Tags.RETURN_READ + Tags.PROTOCOL + owner.getName() + Tags.PROTOCOL;
+		String mail = Tags.RETURN_READ + Tags.PROTOCOL;
 		
 		switch(owner.getName()){
 			case Tags.CENTRAL: EXECUTE_QUERY_REQUEST(tList); break;
@@ -212,7 +215,6 @@ public class Controller implements Subject, QueryObserver
 						  SEND_QUERY_TO_RECEIVER(mail, tList, receiver);
 					  }catch(Exception e){
 						  System.out.println(Tags.CENTRAL + " IS NOT CONNECTED!");
-						  
 						  EXECUTE_QUERY_REQUEST(tList);
 						  receiver = owner.searchConnection(Tags.MARINDUQUE);
 						  

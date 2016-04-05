@@ -307,7 +307,7 @@ public class Transaction implements Runnable, Subject, Serializable{
 				if(receiver.equals(sender))// meaning central siya
 					notifyQueryObservers(cs); 
 				else
-					sendToSender(cs, receiver);	
+					sendToSender(cs, sender);	
 			}
 			
 		}catch(Exception e){
@@ -327,9 +327,9 @@ public class Transaction implements Runnable, Subject, Serializable{
 	public void sendToSender(CachedRowSetImpl cs, Site sender){
 		
 		try{
-			Site s = sender;
-			System.out.println("TO BE SENT TO: ");
-			Socket SOCK = new Socket(s.getIpadd(),Tags.PORT);
+			
+			System.out.println("TO BE SENT TO: " + sender.getName() + " IP: "+ sender.getIpadd() + "#");
+			Socket SOCK = new Socket("192.168.54.1",Tags.PORT);
 			String sProtocol = Tags.RESULT_SET + Tags.PROTOCOL;
 			
 			OutputStream tempOut = SOCK.getOutputStream();
