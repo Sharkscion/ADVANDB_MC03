@@ -64,9 +64,9 @@ public class Controller implements Subject, QueryObserver
 		owner.addConnection(newSite);
 	}
 	
-	public void EXECUTE_QUERY_REQUEST(ArrayList<TransactionMail> tList){
+	public void EXECUTE_QUERY_REQUEST(TransactionMail tm){
 		System.out.println("EXECUTING LOCAL QUERY READ REQUEST: "+ owner.getName());
-		TransactionMail tm = tList.get(0);
+		
 		Transaction t = new Transaction(tm.getQuery(), tm.getReceiver());		
 		t.setSender(tm.getSender());
 		t.setIsolation_level(tm.getISO_LEVEL());
@@ -83,7 +83,7 @@ public class Controller implements Subject, QueryObserver
 	public void RETURN_READ_EXECUTE(byte[] receiveByte){
 		System.out.println("EXECUTING RETURN QUERY");
 	
-		ArrayList<TransactionMail> tList;
+		TransactionMail tm;
 		try {
 			
 			byte[] byteArr = new byte[65500];
@@ -92,10 +92,9 @@ public class Controller implements Subject, QueryObserver
 			
 			System.out.println("writeFile (bytes received: " + bytesRead + ")");
 			
-			tList = (ArrayList<TransactionMail>) deserialize(byteArr);
+			tm = (TransactionMail) deserialize(byteArr);
 			System.out.println("STARTING THREAD");
 			
-			TransactionMail tm = tList.get(0);
 			Transaction t = new Transaction(tm.getQuery(), tm.getReceiver());		
 			
 			System.out.println("ReCEIVER: "+ tm.getReceiver().getName());
@@ -168,19 +167,15 @@ public class Controller implements Subject, QueryObserver
 	    return is.readObject();
 	}
 
-	public void SEND_QUERY_TO_RECEIVER(String mail, ArrayList<TransactionMail> tList, Site receiver) throws UnknownHostException, IOException{
-	
-		try{
-			System.out.println("TO BE SENT TO: " + receiver.getName());
+	public void SEND_QUERY_TO_RECEIVER(String mail, TransactionMail tm) throws UnknownHostException, IOException{
+				
+			Site receiver = tm.getReceiver();
 			byte[] mailQuery = null;
 			byte[] mailByte = mail.getBytes();
-			
-			/**change the transaction receiver since hndi on si central**/
-			for(TransactionMail t : tList)
-				t.setReceiver(receiver);
-			
-			byte[] object = serialize(tList);
+			byte[] object = serialize(tm);
 			mailQuery = byteConcat(mailByte, object);
+			
+			System.out.println("TO BE SENT TO: " + receiver.getName());
 			
 			Socket SOCK = new Socket(receiver.getIpadd(),Tags.PORT);
 			OutputStream tempOut = SOCK.getOutputStream();
@@ -189,10 +184,7 @@ public class Controller implements Subject, QueryObserver
 		 	SOCK.close();
 		 	
 			System.out.println("FINISH SENDING TO: "+ receiver.getName());
-		}catch(Exception e){
-			e.printStackTrace();
-			System.out.println("FAILED TO SEND RESULT SET TO : "+ receiver.getName());
-		}
+	
 	}
 	
 	
@@ -207,44 +199,67 @@ public class Controller implements Subject, QueryObserver
 		Site receiver = null;
 		String mail = Tags.RETURN_READ + Tags.PROTOCOL;
 		
-		switch(owner.getName()){
-			case Tags.CENTRAL: EXECUTE_QUERY_REQUEST(tList); break;
-			case Tags.PALAWAN:
-					  receiver = owner.searchConnection(Tags.CENTRAL);
-					  try{
-						  SEND_QUERY_TO_RECEIVER(mail, tList, receiver);
-					  }catch(Exception e){
-						  System.out.println(Tags.CENTRAL + " IS NOT CONNECTED!");
-						  EXECUTE_QUERY_REQUEST(tList);
-						  receiver = owner.searchConnection(Tags.MARINDUQUE);
-						  
-						  try{
-							  SEND_QUERY_TO_RECEIVER(mail, tList, receiver);
-						  }catch(Exception e1){
-							  System.out.println(Tags.MARINDUQUE+" IS NOT CONNECTED!");
-						  }  
-					  }break;
-			case Tags.MARINDUQUE:
-					  receiver = owner.searchConnection(Tags.CENTRAL);
-					  try{
-						  SEND_QUERY_TO_RECEIVER(mail, tList, receiver);
-					  }catch(Exception e){
-						  System.out.println(Tags.CENTRAL + " IS NOT CONNECTED!");
-						  
-						  EXECUTE_QUERY_REQUEST(tList);
-						  receiver = owner.searchConnection(Tags.PALAWAN);
-						  
-						  try{
-							  SEND_QUERY_TO_RECEIVER(mail, tList, receiver);
-						  }catch(Exception e1){
-							  System.out.println(Tags.PALAWAN+" IS NOT CONNECTED!");
-						  } 
-					  }break;
-						  
-			default: System.out.println("SITE NOT RECOGNIZED!");	  
+		for(TransactionMail tm : tList){
+			switch(owner.getName()){
+				case Tags.CENTRAL: EXECUTE_QUERY_REQUEST(tm); break;
+				case Tags.PALAWAN:
+						  //If local yung query
+						  if(tm.getReceiver().equals(tm.getSender()))
+							  EXECUTE_QUERY_REQUEST(tm);
+						  else{
+							  //if Central is not down then send the query to central
+							  receiver = owner.searchConnection(Tags.CENTRAL);
+							  try{
+								  tm.setReceiver(receiver);
+								  SEND_QUERY_TO_RECEIVER(mail, tm);
+							  }catch(Exception e){
+								  System.out.println(Tags.CENTRAL + " IS NOT CONNECTED!");
+								 
+								  tm.setReceiver(owner);
+								  EXECUTE_QUERY_REQUEST(tm);
+								  
+								  try{
+									  receiver = owner.searchConnection(Tags.MARINDUQUE);
+									  tm.setReceiver(receiver);
+									  SEND_QUERY_TO_RECEIVER(mail, tm);
+								  }catch(Exception e1){
+									  System.out.println(Tags.MARINDUQUE+" IS NOT CONNECTED!");
+								  }  
+							  }
+						  }
+						break;
+				case Tags.MARINDUQUE:
+						//If local yung query
+						if(tm.getReceiver().equals(tm.getSender()))
+							 EXECUTE_QUERY_REQUEST(tm);
+						else{
+							//If central is not down then send the query to central
+							  receiver = owner.searchConnection(Tags.CENTRAL);
+							  try{
+								  tm.setReceiver(receiver);
+								  SEND_QUERY_TO_RECEIVER(mail, tm);
+							  }catch(Exception e){
+								  System.out.println(Tags.CENTRAL + " IS NOT CONNECTED!");
+								  
+								  tm.setReceiver(owner);
+								  EXECUTE_QUERY_REQUEST(tm);
+								  
+								  try{
+									  receiver = owner.searchConnection(Tags.PALAWAN);  
+									  tm.setReceiver(receiver);
+									  SEND_QUERY_TO_RECEIVER(mail, tm);
+								  }catch(Exception e1){
+									  System.out.println(Tags.PALAWAN+" IS NOT CONNECTED!");
+								  } 
+							  }
+						}break;
+							  
+				default: System.out.println("SITE NOT RECOGNIZED!");	  
+			}
 		}
 		
-		System.out.println("==READ REQUEST END==");
+		
+		System.out.println("==SENDING QUERY REQUEST END==");
 	 }
 
 	
@@ -265,13 +280,12 @@ public class Controller implements Subject, QueryObserver
 		// TODO Auto-generated method stub
 		
 		if(rsList != null){
-			System.out.println("BAGO LIST :(");
 			System.out.println("SIZE OF RES LIST: "+ rsList.size());
 			for(Observer o: obList){
-			    System.out.println("UPDATING TABLE");
+			  
 	            o.update();
+	            System.out.println("UPDATING TABLE");
 	        }
-			rsList.clear();
 		}
 	  
 	}
@@ -291,12 +305,6 @@ public class Controller implements Subject, QueryObserver
 	@Override
 	public void updateResultSet(CachedRowSetImpl rs) {
 		System.out.println("FINISH EXECUTING QUERY READ REQUEST");
-		try {
-			System.out.println("ADDING RESULT SET : "+ rs.getFetchSize());
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 		rsList.add(rs);
 	}
 	

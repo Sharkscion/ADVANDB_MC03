@@ -304,9 +304,9 @@ public class Transaction implements Runnable, Subject, Serializable{
 				System.out.println("TRAN RECEIVER: "+ receiver.getName());
 				System.out.println("TRAN SENDER: "+sender.getName());
 				
-				if(receiver.equals(sender))// meaning central siya
+				if(receiver.equals(sender) && cs != null)
 					notifyQueryObservers(cs); 
-				else
+				else if(cs != null)
 					sendToSender(cs, sender);	
 			}
 			
@@ -329,7 +329,7 @@ public class Transaction implements Runnable, Subject, Serializable{
 		try{
 			
 			System.out.println("TO BE SENT TO: " + sender.getName() + " IP: "+ sender.getIpadd() + "#");
-			Socket SOCK = new Socket("192.168.54.1",Tags.PORT);
+			Socket SOCK = new Socket(sender.getIpadd(),Tags.PORT);
 			String sProtocol = Tags.RESULT_SET + Tags.PROTOCOL;
 			
 			OutputStream tempOut = SOCK.getOutputStream();
