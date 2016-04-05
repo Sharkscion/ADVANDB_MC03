@@ -10,6 +10,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.io.IOException;
+import java.net.UnknownHostException;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -510,19 +512,25 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 		table.setModel(dataModel);
 
 		try {
-			for(CachedRowSetImpl rs : rsList){
+			System.out.println("SIZE OF RS LIST IN GUI: "+rsList.size());
+			for(int i = 0; i<rsList.size(); i++){
+				CachedRowSetImpl rs = rsList.get(i);
+				System.out.println("RES #"+i);
 				ResultSetMetaData mdata = rs.getMetaData();
 				int colCount = mdata.getColumnCount();		
 				String[] colNames = getColumnNames(colCount, mdata);
 				dataModel.setColumnIdentifiers(colNames);
 				while (rs.next()) {
+					System.out.println("PRINT");
 					String[] rowData = new String[colCount];
-					for (int i = 1; i <= colCount; i++) {
-						rowData[i - 1] = rs.getString(i);
+					for (int j = 1; j <= colCount; j++) {
+						rowData[j - 1] = rs.getString(j);
+						System.out.println("DATA: "+rs.getString(j));
 					}
 					dataModel.addRow(rowData);
 				}
 			}
+			
 		} catch (SQLException e) {}
 
 		return table;
@@ -598,8 +606,16 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 
 		}else if(e.getSource() == btnSubmit){
 			
-			addTransaction("SELECT * FROM numbers;", false);
-			c.SEND_QUERY_REQUEST(tranList);
+			
+			try {
+				c.SEND_QUERY_REQUEST(tranList);
+			} catch (UnknownHostException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 			
 			resultsTabbedPane.removeAll();
 			tablePanelList.clear();
@@ -615,14 +631,17 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 
 		}else if(e.getSource() == btnWrite){
 			String que = getWriteQuery();
-			addTransaction(que, true);
+			//addTransaction(que, true);
+			addTransaction("UPDATE numbers SET col = 999 WHERE id = 1;", true);
 			transactionList.append(transactionCounter + ". " + "Write " + que + "\n"); 
 			transactionCounter++;
 		}else if (e.getSource() == btnRead){
 			String que = getReadQuery();
-			addTransaction(que,false);
+			//addTransaction(que,false);
+			addTransaction("SELECT * FROM numbers;", false);
 			transactionList.append(transactionCounter + ". " + "Read " + que + "\n"); 
 			transactionCounter++;
+			
 			
 		}
 		else if(e.getSource() == rbAbort){
@@ -680,6 +699,7 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 		// TODO Auto-generated method stub
 		rsList = c.getResultSets();
 		updateTable();
+		System.out.println("FINISH UPDATING GUI");
 	}
 
 }

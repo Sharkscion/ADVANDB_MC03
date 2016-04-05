@@ -14,10 +14,10 @@ public class Driver
 		// Starting the Server
 		Site owner = new Site("10.2.180.247", Tags.MARINDUQUE);
 		Controller con = new Controller(owner);
-		con.add("10.100.199.129", Tags.PALAWAN);
+		con.add("10.2.181.65", Tags.PALAWAN);
 		con.add("10.150.199.129", Tags.CENTRAL);
 		
-		Server SER = new Server(con, 6969);
+		Server SER = new Server(con, Tags.PORT);
 		Thread X = new Thread(SER);
 		X.start();	// Runs the server process
 		ClientGUI mainGUI = new ClientGUI(con);

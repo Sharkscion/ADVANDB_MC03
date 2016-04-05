@@ -304,10 +304,16 @@ public class Transaction implements Runnable, Subject, Serializable{
 				System.out.println("TRAN RECEIVER: "+ receiver.getName());
 				System.out.println("TRAN SENDER: "+sender.getName());
 				
-				if(receiver.equals(sender) && cs != null)
-					notifyQueryObservers(cs); 
-				else if(cs != null)
-					sendToSender(cs, sender);	
+				if(isWrite && cs != null){
+					sendPartialCommitStatusToSender(Tags.PARTIAL_COMMIT,name, sender);
+				}else if(!isWrite && cs != null){
+					if(receiver.equals(sender) && cs != null)
+						notifyQueryObservers(cs); 
+					else if(cs != null)
+						sendToSender(cs, sender);
+				}else if(isWrite && cs == null){
+					sendPartialCommitStatusToSender(Tags.ABORT, name, sender);
+				}
 			}
 			
 		}catch(Exception e){
@@ -321,9 +327,30 @@ public class Transaction implements Runnable, Subject, Serializable{
 		// TODO Auto-generated method stub
 		beginTransaction();
 		runTransaction();
-		endTransaction();
+		if(!isWrite()){
+			endTransaction();
+		}
 	}
 
+	public void sendPartialCommitStatusToSender(String protocol, String name, Site sender){
+		try{
+			System.out.println("PARTIAL COMMIT SUCCESS TO BE SENT TO : "+sender.getName());
+			//send the protocol and the transaction name
+			String mail = protocol + Tags.PROTOCOL + name;
+			Socket SOCK = new Socket(sender.getIpadd(), Tags.PORT);
+			
+			PrintWriter OUT = new PrintWriter(SOCK.getOutputStream());
+			OUT.println(mail); 
+			OUT.flush();
+			
+			System.out.println("FINISH SENDING");
+			
+		}catch(Exception e){
+			e.printStackTrace();
+			System.out.println("FAILED TO SEND WRITE SUCCESS TO : "+ sender.getName());
+		}
+	}
+	
 	public void sendToSender(CachedRowSetImpl cs, Site sender){
 		
 		try{
@@ -344,7 +371,7 @@ public class Transaction implements Runnable, Subject, Serializable{
 			System.out.println("FINISH SENDING");
 		}catch(Exception e){
 			e.printStackTrace();
-			System.out.println("FAILED TO SEND RESULT SET TO : "+ sender);
+			System.out.println("FAILED TO SEND RESULT SET TO : "+ sender.getName());
 		}
 	}
 	@Override

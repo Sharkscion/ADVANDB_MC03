@@ -57,7 +57,7 @@ public class Client {
 			    int from = InputCommand.substring(0,6).getBytes().length;
     			int to = InputCommand.getBytes().length - from;
     			
-			    System.out.println("INPUT COMMAND: "+InputCommand);			
+			   // System.out.println("INPUT COMMAND: "+InputCommand);			
 			    String mailServer[] = InputCommand.split(Tags.PROTOCOL, 2);
 			    
 			    System.out.println("MAIL SERVER PROTOCOL: "+mailServer[0]);
@@ -65,13 +65,16 @@ public class Client {
 			    switch(mailServer[0].trim()){
 			    	case Tags.RETURN_READ: 
 			    			/** query-> index 0   sender-> index 1**/
+			    			System.out.println("==QUERY REQUEST RECEIVED==");
 			    		    c.RETURN_READ_EXECUTE(Arrays.copyOfRange(scannedbytes, from, to));
 			    		break;
 			    	case Tags.RESULT_SET:
-			    			System.out.println("PASOK RESULT SET");
-			    			
+			    			System.out.println("==RESULT SET RECEIVED==");
 			    			c.RECEIVE_RESULT_SET(Arrays.copyOfRange(scannedbytes, from, to));
 			    			break;
+			    	case Tags.PARTIAL_COMMIT:
+			    			System.out.println("==PARTIAL COMMIT STATUS RECEIVED==");
+			    			
 			    	default: System.out.println("PROTOCOL NOT RECOGNIZED!");
 			    }
 			   
