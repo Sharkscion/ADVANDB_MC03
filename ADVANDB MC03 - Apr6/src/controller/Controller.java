@@ -74,6 +74,7 @@ public class Controller implements Subject, QueryObserver
 		Transaction t =  partialList.get(name);
 		t.setTran_action(Transaction.COMMIT);
 		t.endTransaction();
+		System.out.println("FINISH COMMITING");
 	}
 	
 	public void ABORT_TRANSACTION(String name){
@@ -100,6 +101,7 @@ public class Controller implements Subject, QueryObserver
 			t.beginTransaction();
 			t.runTransaction();
 			t.endTransaction();
+			System.out.println("END TRANSACTION RECEIVED FROM CENTRAL");
 	}
 	
 	public void ABORT_FROM_CENTRAL(Mail rMail){

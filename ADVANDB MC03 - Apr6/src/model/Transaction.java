@@ -83,7 +83,7 @@ public class Transaction implements Runnable, Subject, Serializable{
 
 	private Site receiver;
 	private Site sender;
-
+	private int numUpdates;
 	private int tran_action;
 	private ArrayList<QueryObserver> obList;
 	private CachedRowSetImpl cs;
@@ -259,7 +259,13 @@ public class Transaction implements Runnable, Subject, Serializable{
 		if(tran_action == COMMIT){
 			try {
 				con.commit();
-				notifyObservers();
+				if(!isWrite)
+					notifyObservers();
+				//if you have already committed and it is successful 
+				// send the confirmation back to central
+				if(goCommit && numUpdates != 0 && !receiver.getName().equals(Tags.CENTRAL)){
+					sendCommitToReceiver();
+				}
 			}  catch (SQLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -304,7 +310,7 @@ public class Transaction implements Runnable, Subject, Serializable{
 	
 	public void runTransaction(){
 		
-		int numUpdates = 0;
+		numUpdates = 0;
 		try{			
 			if(!query.equals("")){
 				
@@ -346,11 +352,6 @@ public class Transaction implements Runnable, Subject, Serializable{
 					}
 				}
 				
-				//if you have already committed and it is successful 
-				// send the confirmation back to central
-				if(goCommit && numUpdates != 0){
-					sendCommitToReceiver();
-				}
 			}
 			
 		}catch(Exception e){
@@ -460,8 +461,8 @@ public class Transaction implements Runnable, Subject, Serializable{
 		if(!isWrite)
 			endTransaction();
 		
-		if(isWrite && goCommit)
-			endTransaction();
+//		if(isWrite && goCommit)
+//			endTransaction();
 	}
 
 	public void sendToSender(CachedRowSetImpl cs, Site sender){
