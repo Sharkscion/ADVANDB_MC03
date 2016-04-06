@@ -625,7 +625,7 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 					
 			}
 
-		}else if(e.getSource() == btnSubmit){
+		}else if(e.getSource() == btnSubmit && !textField.getText().isEmpty()){
 			
 			
 			try {
@@ -647,13 +647,13 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 				tablePanelList.add(resultsTabbedPane.getSelectedIndex(),tablePanel);
 			}
 
-		}else if(e.getSource() == btnWrite){
+		}else if(e.getSource() == btnWrite && !textField.getText().isEmpty()){
 			String que = getWriteQuery();
 			addTransaction(que, true);
 			//addTransaction("UPDATE numbers SET col = 999 WHERE id = 1;", true);
 			transactionList.append(transactionCounter + ". " + "Write " + que + "\n"); 
 			transactionCounter++;
-		}else if (e.getSource() == btnRead){
+		}else if (e.getSource() == btnRead && !textField.getText().isEmpty()){
 			String que = getReadQuery();
 			addTransaction(que,false);
 			//addTransaction("SELECT * FROM numbers;", false);

@@ -90,7 +90,7 @@ public class Controller implements Subject, QueryObserver
 			System.out.println("RECEIVEED PARTIAL COMMIT STATUS FORM CENTRAL");
 			
 			TransactionMail tm = rMail.getTm();
-			Transaction t = new Transaction(tm.getQuery(), tm.getReceiver());
+			Transaction t = new Transaction(tm.getQuery(), tm.getReceiver(), tm.getTranName());
 			t.setSender(tm.getSender());
 			t.setIsolation_level(tm.getISO_LEVEL());
 			t.setTableName(tm.getTableName());
@@ -114,7 +114,7 @@ public class Controller implements Subject, QueryObserver
 	public void EXECUTE_LOCAL_QUERY_REQUEST(TransactionMail tm){
 		System.out.println("EXECUTING LOCAL QUERY REQUEST: "+ owner.getName());
 		
-		Transaction t = new Transaction(tm.getQuery(), tm.getReceiver());		
+		Transaction t = new Transaction(tm.getQuery(), tm.getReceiver(), tm.getTranName());		
 		t.setSender(tm.getSender());
 		t.setIsolation_level(tm.getISO_LEVEL());
 		t.setTableName(tm.getTableName());
@@ -140,7 +140,7 @@ public class Controller implements Subject, QueryObserver
 		tm= rMail.getTm();
 		System.out.println("STARTING THREAD");
 		
-		Transaction t = new Transaction(tm.getQuery(), tm.getReceiver());		
+		Transaction t = new Transaction(tm.getQuery(), tm.getReceiver(), tm.getTranName());		
 		
 		System.out.println("ReCEIVER: "+ tm.getReceiver().getName());
 		System.out.println("SENDER: "+tm.getSender().getName() + " IP:"+tm.getSender().getIpadd()+"#");

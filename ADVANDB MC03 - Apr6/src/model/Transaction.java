@@ -107,7 +107,7 @@ public class Transaction implements Runnable, Subject, Serializable{
 		isolation_level = ISO_SERIALIZABLE;
 	}
 	
-	public Transaction(String query, Site receiver){
+	public Transaction(String query, Site receiver, String tranName){
 		dbCon = new DBConnection();
 		con = dbCon.getConnection();
 		preparedStatement = null;
@@ -116,6 +116,7 @@ public class Transaction implements Runnable, Subject, Serializable{
 		cs = null;
 		this.receiver = receiver;
 		this.query = query;
+		this.name = tranName;
 		isolation_level = ISO_SERIALIZABLE;
 	}
 	
@@ -392,6 +393,7 @@ public class Transaction implements Runnable, Subject, Serializable{
 		
 		try{
 			System.out.println("PARTIAL COMMIT SUCCESS TO BE SENT TO : "+receiver.getName());
+			System.out.println("NAME OF TRANSACTION: " + name);
 			//send the protocol and the transaction name
 			String mail = Tags.COMMIT + Tags.PROTOCOL + name;
 			
