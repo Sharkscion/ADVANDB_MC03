@@ -475,6 +475,15 @@ public class Controller implements Subject, QueryObserver
 	@Override
 	public void updateResultSet(CachedRowSetImpl rs) {
 		System.out.println("FINISH EXECUTING QUERY READ REQUEST");
+		int i = 1;
+		try {
+			while(rs.next()){
+				System.out.println("DATA: " + rs.getString(i));
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		rsList.add(rs);
 	}
 	
