@@ -145,10 +145,11 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 		pane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 	
 		ArrayList<String> attributeList = new ArrayList<String>();
-		attributeList.add("Household ID: ");
-		attributeList.add("Aquani Volume: ");
-		attributeList.add("Aquani Type: ");
-		attributeList.add("Aquani Type Others: ");
+		attributeList.add("Household ID ");
+		attributeList.add("Mem ID ");
+		attributeList.add("Aquani Volume ");
+		attributeList.add("Aquani Type ");
+		attributeList.add("Aquani Type Others ");
 		createQueryEditPanel(attributeList);
 		
 		queryEditPanel.repaint();
@@ -214,8 +215,9 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 		
 		HashMap<String, String> readWriteComponents2 = (HashMap<String, String>) readWriteComponents.clone();
 		for(Entry<String, String> entry : readWriteComponents.entrySet()) {
+			System.out.println("ENTRY: " + entry.getKey());
 			if(entry.getKey().equals("hpq_hh_id")){
-				where = where + "hpq_hh_id = " + entry.getValue() + " ";
+				where =  where + " hpq_hh_id = " + entry.getValue() + " ";
 				readWriteComponents2.remove(entry.getKey());
 			}
 			if(entry.getKey().equals("id")){

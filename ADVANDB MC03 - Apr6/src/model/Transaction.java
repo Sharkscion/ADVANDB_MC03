@@ -415,7 +415,7 @@ public class Transaction implements Runnable, Subject, Serializable{
 		}
 	}
 
-	public void sendPartialCommitStatusToSender(String sp, String name, Site sender){
+	public void sendPartialCommitStatusToSender(String sp, String tranName, Site sender){
 		try{
 			System.out.println("PARTIAL COMMIT STATUS TO BE SENT TO : "+sender.getName());
 			//send the protocol and the transaction name
@@ -423,7 +423,8 @@ public class Transaction implements Runnable, Subject, Serializable{
 			TransactionMail tm = new TransactionMail(query, receiver, name);
 			tm.setSender(sender);
 			tm.setISO_LEVEL(isolation_level);
-			tm.setTableName(name);
+			tm.setTableName(tableName);
+			tm.setTranName(tranName);
 			tm.setTranAction(tran_action);
 			tm.setWrite(isWrite);
 			
