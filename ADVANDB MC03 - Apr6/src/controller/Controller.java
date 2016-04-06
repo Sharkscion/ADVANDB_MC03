@@ -97,15 +97,9 @@ public class Controller implements Subject, QueryObserver
 			t.setTran_action(Transaction.COMMIT);
 			t.setGoCommit(true); // meaning go forth and commit
 			t.setWrite(tm.isWrite());
-		//	t.registerObserver(this);
-		
-//			if(tm.isWrite()){
-//				System.out.println("SET PARTIAL COMMIT TO TRANSACTION RECEIVED TRANSACTITON");
-//				partialCommit = t;
-//			}
-			
-			Thread T = new Thread(t);
-			T.start();	
+			t.beginTransaction();
+			t.runTransaction();
+			t.endTransaction();
 	}
 	
 	public void ABORT_FROM_CENTRAL(Mail rMail){
@@ -123,12 +117,18 @@ public class Controller implements Subject, QueryObserver
 		t.registerObserver(this);
 		
 		if(tm.isWrite()){
+			t.beginTransaction();
+			t.runTransaction();
+		}else{
+			Thread tr = new Thread(t);
+			tr.start();
+		}
+		
+		if(tm.isWrite()){
 			System.out.println("SET PARTIAL COMMIT TO TRANSACTION");
 			partialList.put(tm.getTranName(), t);
 		}
-		
-		Thread T = new Thread(t);
-		T.start();
+	
 	}
 	
 	
@@ -150,15 +150,21 @@ public class Controller implements Subject, QueryObserver
 		t.setTableName(tm.getTableName());
 		t.setTran_action(tm.getTranAction());
 		t.setWrite(tm.isWrite());
-		t.registerObserver(this);
+		
+		if(tm.isWrite()){
+			t.beginTransaction();
+			t.runTransaction();
+		}else{
+			Thread tr = new Thread(t);
+			tr.start();
+		}
+	
+		//t.registerObserver(this);
 		
 		if(tm.isWrite()){
 			System.out.println("SET PARTIAL COMMIT TO TRANSACTION");
 			partialList.put(tm.getTranName(), t);
-		}
-		
-		Thread T = new Thread(t);
-		T.start();		
+		}	
 	
 	}
 	
