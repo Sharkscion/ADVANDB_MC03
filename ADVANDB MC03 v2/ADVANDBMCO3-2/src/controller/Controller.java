@@ -175,17 +175,16 @@ public class Controller implements Subject, QueryObserver
 	    return is.readObject();
 	}
 
-	public void SEND_QUERY_TO_RECEIVER(String mail, TransactionMail tm){
-					
-		try {
+	public void SEND_QUERY_TO_RECEIVER(String mail, TransactionMail tm) throws UnknownHostException, IOException{
+				
 			Site receiver = tm.getReceiver();
 			byte[] mailQuery = null;
 			byte[] mailByte = mail.getBytes();
 			byte[] object = serialize(tm);
-			
 			mailQuery = byteConcat(mailByte, object);
+			
 			System.out.println("TO BE SENT TO: " + receiver.getName());
-			System.out.println("MAiL: "+mailQuery);
+			System.out.println("MAiL: "+mail);
 			
 			Socket SOCK = new Socket(receiver.getIpadd(),Tags.PORT);
 			OutputStream tempOut = SOCK.getOutputStream();
@@ -195,11 +194,6 @@ public class Controller implements Subject, QueryObserver
 		 	
 			System.out.println("FINISH SENDING TO: "+ receiver.getName());
 	
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
 	}
 	
 	
@@ -210,7 +204,7 @@ public class Controller implements Subject, QueryObserver
 	{
 	
 		System.out.println("==STARTING SENDING QUERY REQUEST==");
-		//Site receiver = null;
+		Site receiver = null;
 		String mail = Tags.RETURN_READ + Tags.PROTOCOL;
 		
 		for(TransactionMail tm : tList){
@@ -286,7 +280,6 @@ public class Controller implements Subject, QueryObserver
 		Site receiver = null;
 		Site receiver2 = null;
 		if(tm.isWrite()){
-			System.out.println("IS WRITE");
 			switch(tm.getReceiver().getName()){
 				case Tags.CENTRAL:System.out.println("NOT YET IMPLEMENTED");break;
 				case Tags.MARINDUQUE:
@@ -315,7 +308,7 @@ public class Controller implements Subject, QueryObserver
 			}
 			
 		}else{
-			System.out.println("ISREAD");
+			
 			switch(tm.getReceiver().getName()){
 				case Tags.PALAWAN: EXECUTE_QUERY_REQUEST(tm);break;
 				

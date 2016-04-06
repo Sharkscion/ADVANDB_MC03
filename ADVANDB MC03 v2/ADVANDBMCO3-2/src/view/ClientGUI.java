@@ -660,7 +660,7 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 		System.out.println("QUERY: "+ query);
 		if(c.getOwner().getName().equals(siteChosen))
 			receiver = c.getOwner();
-		else if(siteChosen.equals(Tags.CENTRAL))
+		else if(c.getOwner().getName().equals(Tags.CENTRAL))
 			receiver = c.searchForSite(Tags.CENTRAL);
 		else 
 			receiver = c.searchForSite(siteChosen);
