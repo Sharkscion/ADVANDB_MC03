@@ -324,9 +324,10 @@ public class Transaction implements Runnable, Subject, Serializable{
 				
 				System.out.println("TRAN RECEIVER: "+ receiver.getName());
 				System.out.println("TRAN SENDER: "+sender.getName());
+				System.out.println("QUERY: "+query);
+				System.out.println("NUM UPDATES: " + numUpdates);
 				
-
-				 // if magwriwrite muna siya and success siya <- central
+				// if magwriwrite muna siya and success siya <- central
 				if(isWrite && numUpdates != 0){
 					sendPartialCommitStatusToSender(Tags.PARTIAL_COMMIT,name, sender);
 					

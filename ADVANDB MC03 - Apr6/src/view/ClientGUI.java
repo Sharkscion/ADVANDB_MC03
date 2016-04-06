@@ -63,14 +63,13 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 	
 	private JPanel topPanel, bottomPanel;
 	private JPanel queryPanel, abortCommitPanel, mainPanel, isolationPanel;
-	private JPanel customPanel, defaultPanel;
+	private JPanel defaultPanel;
 	private JPanel transactionsPanel, queryEditPanel;
-	private JScrollPane readScroll, customScroll, pane;
+	private JScrollPane readScroll, pane;
 	private JTabbedPane queryTabbedPane, resultsTabbedPane;
-	private JTextArea readTextArea, customTextArea, transactionList;
+	private JTextArea readTextArea, transactionList;
 	private JRadioButton rbAbort, rbCommit;
 	private JButton btnRead, btnWrite;
-	private JButton btnSubmitButton;
 	private JPanel settingsPanel;
 	private JPanel areaPanel;
 	private JCheckBox chckbxPalawan;
@@ -178,29 +177,6 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 		defaultPanel.add(pane, BorderLayout.CENTER);
 		defaultPanel.add(btnsPanel, BorderLayout.SOUTH);
 
-		customPanel = new JPanel();
-		customPanel.setBackground(Color.WHITE);
-		queryTabbedPane.addTab("Custom", null, customPanel, null);
-		customPanel.setLayout(new GridLayout(0, 1, 0, 0));
-		customTextArea = new JTextArea(customPanel.getWidth(), customPanel.getHeight());
-		customScroll = new JScrollPane(customTextArea);
-		customScroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-		customPanel.add(customScroll);
-		btnSubmitButton = new JButton("Submit");
-		btnSubmitButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				// TODO Auto-generated method stub
-				transactionQueries.clear();
-				transactionCounter = 1;
-				transactionList.removeAll();
-				transactionList.repaint();
-				transactionList.revalidate();
-				//generate table
-			}
-		});
-		customPanel.add(btnSubmitButton);
-
 		return queryPanel;
 	}
 
@@ -210,14 +186,15 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 		String table = "";
 		String set = "set ";
 		String where = "where ";
-		String[] attributeTitles = new String[4];
+		String[] attributeTitles = new String[5];
 		
 		table = "hpq_aquani";
 
 		attributeTitles[0] = "hpq_hh_id";
-		attributeTitles[1] = "aquani_vol";
-		attributeTitles[2] = "aquanitype";
-		attributeTitles[3] = "aquanitype_o";
+		attributeTitles[1] = "id";
+		attributeTitles[2] = "aquani_vol";
+		attributeTitles[3] = "aquanitype";
+		attributeTitles[4] = "aquanitype_o";
 		
 
 		Component[] children = queryEditPanel.getComponents();
@@ -235,12 +212,21 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 		}
 
 		
-		 HashMap<String, String> readWriteComponents2 = (HashMap<String, String>) readWriteComponents.clone();
+		HashMap<String, String> readWriteComponents2 = (HashMap<String, String>) readWriteComponents.clone();
 		for(Entry<String, String> entry : readWriteComponents.entrySet()) {
-			if(entry.getKey().equals("id") || entry.getKey().equals("hpq_hh_id")) {
-				where = where + "id = " + entry.getValue() + ";";
+			if(entry.getKey().equals("hpq_hh_id")){
+				where = where + "hpq_hh_id = " + entry.getValue() + " ";
+				readWriteComponents2.remove(entry.getKey());
+			}
+			if(entry.getKey().equals("id")){
+				where = where + " AND  id = " + entry.getValue();
 				readWriteComponents2.remove(entry.getKey());
 			} 
+			
+			if(c.getOwner().equals(Tags.CENTRAL) && checkIfLocalOrGlobal().equals(Tags.PALAWAN))
+				where = where + " AND  area = " + 1;
+			else if (c.getOwner().equals(Tags.CENTRAL) && checkIfLocalOrGlobal().equals(Tags.MARINDUQUE))
+				where = where + " AND  area = " + 2;
 		}
 
 		int i = 1;
@@ -269,14 +255,15 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 	}
 
 	public String getReadQuery() {
-		String query = "select hpq_hh_id, aquani_vol, aquanitype_o from hpq_aquani";
+		String query = "select hpq_hh_id, id, aquani_vol, aquanitype_o from hpq_aquani";
 		String where = "where ";
-		String[] attributeTitles = new String[4];
+		String[] attributeTitles = new String[5];
 
 		attributeTitles[0] = "hpq_hh_id";
-		attributeTitles[1] = "aquani_vol";
-		attributeTitles[2] = "aquanitype";
-		attributeTitles[3] = "aquanitype_o";
+		attributeTitles[1] = "id";
+		attributeTitles[2] = "aquani_vol";
+		attributeTitles[3] = "aquanitype";
+		attributeTitles[4] = "aquanitype_o";
 
 		Component[] children = queryEditPanel.getComponents();
 		for(int i = 0; i < children.length; i++) {
@@ -304,11 +291,21 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 
 		if(!where.equals("where ")) {
 			query = query + " " + where;
+			if(c.getOwner().equals(Tags.CENTRAL) && checkIfLocalOrGlobal().equals(Tags.PALAWAN))
+				where = where + " AND  area = " + 1;
+			else if (c.getOwner().equals(Tags.CENTRAL) && checkIfLocalOrGlobal().equals(Tags.MARINDUQUE))
+				where = where + " AND  area = " + 2;
 			System.out.println(query);
 		} else {
+			if(c.getOwner().equals(Tags.CENTRAL) && checkIfLocalOrGlobal().equals(Tags.PALAWAN))
+				where = where + "area = " + 1;
+			else if (c.getOwner().equals(Tags.CENTRAL) && checkIfLocalOrGlobal().equals(Tags.MARINDUQUE))
+				where = where + "area = " + 2;
 			query = query + ";";
 		}
 
+		
+		
 		transactionQueries.add(query);
 		readWriteComponents.clear();
 

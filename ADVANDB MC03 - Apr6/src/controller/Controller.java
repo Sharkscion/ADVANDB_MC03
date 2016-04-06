@@ -209,7 +209,7 @@ public class Controller implements Subject, QueryObserver
 			OutputStream tempOut = SOCK.getOutputStream();
 			ObjectOutputStream ous = new ObjectOutputStream(tempOut);
 			ous.writeObject(mail);
-		 	//tempOut.write(mailQuery, 0, mailQuery.length);
+			ous.flush();
 			ous.close();
 			tempOut.flush();
 		 	SOCK.close();
