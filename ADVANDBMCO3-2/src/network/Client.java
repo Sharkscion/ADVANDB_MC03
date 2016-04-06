@@ -15,31 +15,12 @@ import controller.Controller;
 
 public class Client {
 	private Controller c;
-	 public Client(Controller c, Socket X)
-	 {
-		  	this.c = c;
-		  	RECEIVE(X); // pinasa na yung socket :)
+	 
+	public Client(Controller c, Socket X){
+	  	this.c = c;
+	  	RECEIVE(X); // pinasa na yung socket :)
 
 	 }
-	 
-	 public static void POST(String ip, int port, String message)
-		{
-			System.out.println("POST (start)");
-			Socket SOCK;
-			try {
-				SOCK = new Socket(ip, port);								// Open socket
-				PrintWriter OUT = new PrintWriter(SOCK.getOutputStream());
-				OUT.println("\"POST\" " + message + "\0"); 					// Send message
-				OUT.flush();		
-				SOCK.close(); 												// Close socket	
-
-			}
-			catch (Exception e) {
-				e.printStackTrace();
-			} 
-			System.out.println("POST (end)");
-		 }
-
 
 	 void RECEIVE(Socket S){
 			try{
@@ -48,8 +29,8 @@ public class Client {
 				InputStream input = S.getInputStream();			
 				byte [] scannedbytes = new byte [65500];
 						
-				int bytesRead = input.read(scannedbytes,0,scannedbytes.length);
-			    int current = bytesRead;
+//				int bytesRead = input.read(scannedbytes,0,scannedbytes.length);
+//			    int current = bytesRead;
 			   
 			    System.out.println("Client receive (continue to read bytes)");
 			    
@@ -57,7 +38,7 @@ public class Client {
 			    int from = InputCommand.substring(0,6).getBytes().length;
     			int to = InputCommand.getBytes().length - from;
     			
-			   // System.out.println("INPUT COMMAND: "+InputCommand);			
+			    System.out.println("INPUT COMMAND: "+InputCommand);			
 			    String mailServer[] = InputCommand.split(Tags.PROTOCOL, 2);
 			    
 			    System.out.println("MAIL SERVER PROTOCOL: "+mailServer[0]);
@@ -67,13 +48,14 @@ public class Client {
 			    			/** query-> index 0   sender-> index 1**/
 			    			System.out.println("==QUERY REQUEST RECEIVED==");
 			    		    c.RETURN_READ_EXECUTE(Arrays.copyOfRange(scannedbytes, from, to));
-			    		break;
+			    		    break;
 			    	case Tags.RESULT_SET:
 			    			System.out.println("==RESULT SET RECEIVED==");
 			    			c.RECEIVE_RESULT_SET(Arrays.copyOfRange(scannedbytes, from, to));
 			    			break;
 			    	case Tags.PARTIAL_COMMIT:
 			    			System.out.println("==PARTIAL COMMIT STATUS RECEIVED==");
+			    			break;
 			    			
 			    	default: System.out.println("PROTOCOL NOT RECOGNIZED!");
 			    }

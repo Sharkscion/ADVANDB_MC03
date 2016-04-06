@@ -655,9 +655,9 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 	public void addTransaction(String query, boolean isWrite){
 		
 		Site receiver = null;
-		
 		String siteChosen = checkIfLocalOrGlobal();
 		
+		System.out.println("QUERY: "+ query);
 		if(c.getOwner().getName().equals(siteChosen))
 			receiver = c.getOwner();
 		else if(c.getOwner().getName().equals(Tags.CENTRAL))
@@ -666,6 +666,8 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 			receiver = c.searchForSite(siteChosen);
 		
 		System.out.println("SITE CHOSEN: "+siteChosen);
+		System.out.println("RECEIVER OF THE QUERY: "+ receiver.getName());
+		
 		TransactionMail t = new TransactionMail(query, receiver);
 		t.setSender(c.getOwner());
 		

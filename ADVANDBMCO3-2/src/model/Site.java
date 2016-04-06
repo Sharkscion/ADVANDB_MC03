@@ -48,15 +48,9 @@ public class Site implements Serializable{
 	public Site searchConnection(String username){
 		
 		Site s = null;
-		//int x = 0;
-		if(Tags.PALAWAN.equals(username))
-			System.out.println("HELLO?");
-		
-		System.out.println("USERNAE:"+ username + "#");
+	
 		for(int x = 0; x <connectionList.size(); x++){	
-			System.out.println(x + " " +connectionList.get(x).getName());
 			if(connectionList.get(x).getName().equalsIgnoreCase(username)) {
-				System.out.println("PASOk");
 				s = connectionList.get(x);
 			}
 		}

@@ -202,7 +202,6 @@ public class Controller implements Subject, QueryObserver
 	public void SEND_QUERY_REQUEST(ArrayList<TransactionMail> tList) throws UnknownHostException, IOException
 	{
 	
-		
 		System.out.println("==STARTING SENDING QUERY REQUEST==");
 		Site receiver = null;
 		String mail = Tags.RETURN_READ + Tags.PROTOCOL;
@@ -226,15 +225,18 @@ public class Controller implements Subject, QueryObserver
 			Socket SOCKET;
 			try {
 				SOCKET = new Socket(s.getIpadd(), Tags.PORT);
-				return SOCKET.getInetAddress().isReachable(2000);
+				System.out.println("SOCKET INET ADRES: "+SOCKET.getInetAddress() );
+				return SOCKET.getInetAddress().isReachable(10000);
 			} catch (UnknownHostException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+				return false;
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			}finally{
 				return false;
+			}finally{
+				return true;
 			}
 	}
 
@@ -304,6 +306,8 @@ public class Controller implements Subject, QueryObserver
 				case Tags.MARINDUQUE:
 					 //if Central is online
 					 receiver = owner.searchConnection(Tags.CENTRAL);
+					 System.out.println("RECEIVER: "+ receiver.getIpadd());
+					 System.out.println("RECEIVER: "+ receiver.getName());
 					 if(isNodeConnected(receiver)){
 						 tm.setReceiver(receiver);
 						 SEND_QUERY_TO_RECEIVER(mail, tm);

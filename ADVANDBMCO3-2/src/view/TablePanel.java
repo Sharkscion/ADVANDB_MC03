@@ -117,10 +117,6 @@ public class TablePanel extends JPanel{
 
     public void setResultSet(ResultSet rs) {
         this.rs = rs;
-        //dtModel = null;
-        //createTable();
-        //dtModel.fireTableStructureChanged();
-        
         this.removeAll();   //Table will hang after populating table, so u need to refresh by removing all then repainting and revalidating
         dtModel = buildTableModel(rs);
         createTable();
