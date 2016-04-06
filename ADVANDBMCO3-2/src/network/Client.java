@@ -38,9 +38,9 @@ public class Client {
 			    int from = InputCommand.substring(0,6).getBytes().length;
     			int to = InputCommand.getBytes().length - from;
     			
-			    System.out.println("INPUT COMMAND: "+InputCommand);			
+			   // System.out.println("INPUT COMMAND: "+InputCommand);			
 			    String mailServer[] = InputCommand.split(Tags.PROTOCOL, 2);
-			    
+			    System.out.println("INPUT COMMAND: "+InputCommand.substring(0,6) );
 			    System.out.println("MAIL SERVER PROTOCOL: "+mailServer[0]);
 			    
 			    switch(mailServer[0].trim()){

@@ -184,6 +184,7 @@ public class Controller implements Subject, QueryObserver
 			mailQuery = byteConcat(mailByte, object);
 			
 			System.out.println("TO BE SENT TO: " + receiver.getName());
+			System.out.println("MAiL: "+mail);
 			
 			Socket SOCK = new Socket(receiver.getIpadd(),Tags.PORT);
 			OutputStream tempOut = SOCK.getOutputStream();
@@ -220,23 +221,31 @@ public class Controller implements Subject, QueryObserver
 		System.out.println("==FINISH SENDING QUERY REQUEST ==");
 	 }
 
-	public boolean isNodeConnected(Site s){
-	
+	public static boolean isNodeConnected(Site s){
+
+		
 			Socket SOCKET;
 			try {
 				SOCKET = new Socket(s.getIpadd(), Tags.PORT);
-				System.out.println("SOCKET INET ADRES: "+SOCKET.getInetAddress() );
-				return SOCKET.getInetAddress().isReachable(10000);
+				PrintWriter out = new PrintWriter(SOCKET.getOutputStream(), true);
+				out.println("output");
+				if(out.checkError()){
+					System.out.println("NOT CONNECED: "+ s.getName());
+					SOCKET.close();
+					return false;
+				}else{
+					SOCKET.close();
+					System.out.println("IS CONNECTED: "+s.getName());
+					return true;
+				}
 			} catch (UnknownHostException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				//e.printStackTrace();
 				return false;
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				//e.printStackTrace();
 				return false;
-			}finally{
-				return true;
 			}
 	}
 
@@ -309,6 +318,7 @@ public class Controller implements Subject, QueryObserver
 					 System.out.println("RECEIVER: "+ receiver.getIpadd());
 					 System.out.println("RECEIVER: "+ receiver.getName());
 					 if(isNodeConnected(receiver)){
+						 //System.out.println("MAIL: ");
 						 tm.setReceiver(receiver);
 						 SEND_QUERY_TO_RECEIVER(mail, tm);
 					 }else{
