@@ -304,6 +304,7 @@ public class Transaction implements Runnable, Subject, Serializable{
 				System.out.println("TRAN RECEIVER: "+ receiver.getName());
 				System.out.println("TRAN SENDER: "+sender.getName());
 				
+<<<<<<< HEAD:ADVANDB MC03 v2/ADVANDBMCO3-2/src/model/Transaction.java
 				if(isWrite && cs != null){
 					sendPartialCommitStatusToSender(Tags.PARTIAL_COMMIT,name, sender);
 				}else if(!isWrite && cs != null){
@@ -314,6 +315,12 @@ public class Transaction implements Runnable, Subject, Serializable{
 				}else if(isWrite && cs == null){
 					sendPartialCommitStatusToSender(Tags.ABORT, name, sender);
 				}
+=======
+				if(receiver.equals(sender))// meaning central siya
+					notifyQueryObservers(cs); 
+				else
+					sendToSender(cs, sender);	
+>>>>>>> parent of 193d7a8... mergeing result sets:ADVANDBMCO3-2/src/model/Transaction.java
 			}
 			
 		}catch(Exception e){
@@ -356,7 +363,7 @@ public class Transaction implements Runnable, Subject, Serializable{
 		try{
 			
 			System.out.println("TO BE SENT TO: " + sender.getName() + " IP: "+ sender.getIpadd() + "#");
-			Socket SOCK = new Socket(sender.getIpadd(),Tags.PORT);
+			Socket SOCK = new Socket("192.168.54.1",Tags.PORT);
 			String sProtocol = Tags.RESULT_SET + Tags.PROTOCOL;
 			
 			OutputStream tempOut = SOCK.getOutputStream();
