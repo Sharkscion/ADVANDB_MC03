@@ -27,4 +27,12 @@ public class Tags {
 	
 	public static final int PORT = 1996;
 	public static final String TABLE = "hpq_aquani";
+	
+	public static final String HPQ_HH_ID = "hpq_hh_id";
+	public static final String MEM_ID = "id";
+	public static final String AQUANI_VOL = "aquani_vol";
+	public static final String AQUANI_TYPE = "aquanitype";
+	public static final String AQUANI_TYPE_O = "aquanitype_o";
+	public static final String AREA = "area";
+	
 }

@@ -45,6 +45,7 @@ import javax.swing.table.DefaultTableModel;
 import com.sun.rowset.CachedRowSetImpl;
 
 import model.Observer;
+import model.Query;
 import model.ResultSets;
 import model.Site;
 import model.Tags;
@@ -81,6 +82,7 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 
 	private HashMap<String, JTextField> queryComponents;
 	private JButton btnSubmit;
+	private HashMap<String, Query> queryList;
 
 	private ArrayList<TablePanel> tablePanelList = new ArrayList<TablePanel>();
 	private ArrayList<String> transactionQueries = new ArrayList<String>();
@@ -97,6 +99,7 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 		this.tranList = new ArrayList<TransactionMail>();
 		this.ISO_LEVEL = "";
 		this.TRAN_ACTION = Transaction.COMMIT;
+		this.queryList = new HashMap<String, Query>();
 		
 		try {
 			UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
@@ -182,20 +185,23 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 	}
 
 	//DOES NOT TAKE INTO ACCOUNT STRING TYPE (lacking: " ")
-	public String getWriteQuery() {
+	public Query getWriteQuery() {
 		String query = "";
 		String table = "";
 		String set = "set ";
 		String where = "where ";
-		String[] attributeTitles = new String[5];
 		
-		table = "hpq_aquani";
+		table = Tags.TABLE;
+		
+		Query q = new Query();
 
-		attributeTitles[0] = "hpq_hh_id";
-		attributeTitles[1] = "id";
-		attributeTitles[2] = "aquani_vol";
-		attributeTitles[3] = "aquanitype";
-		attributeTitles[4] = "aquanitype_o";
+		ArrayList<String>attributeTitles = new ArrayList<String>();
+
+		attributeTitles.add(Tags.HPQ_HH_ID);
+		attributeTitles.add(Tags.MEM_ID);
+		attributeTitles.add(Tags.AQUANI_VOL);
+		attributeTitles.add(Tags.AQUANI_TYPE);
+		attributeTitles.add(Tags.AQUANI_TYPE_O);
 		
 
 		Component[] children = queryEditPanel.getComponents();
@@ -206,7 +212,7 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 				if(panelChildren[j] instanceof JTextField) {
 					String text = ((JTextField)panelChildren[j]).getText();
 					if(!text.isEmpty()) {
-						readWriteComponents.put(attributeTitles[i], text);
+						readWriteComponents.put(attributeTitles.get(i), text);
 					}
 				}
 			}
@@ -216,19 +222,24 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 		HashMap<String, String> readWriteComponents2 = (HashMap<String, String>) readWriteComponents.clone();
 		for(Entry<String, String> entry : readWriteComponents.entrySet()) {
 			System.out.println("ENTRY: " + entry.getKey());
-			if(entry.getKey().equals("hpq_hh_id")){
-				where =  where + " hpq_hh_id = " + entry.getValue() + " ";
+			if(entry.getKey().equals(Tags.HPQ_HH_ID)){
+				q.addWHERE(Tags.HPQ_HH_ID +"="+entry.getValue() );
+				
+			//	where =  where + " hpq_hh_id = " + entry.getValue() + " ";
 				readWriteComponents2.remove(entry.getKey());
 			}
 			if(entry.getKey().equals("id")){
-				where = where + " AND  id = " + entry.getValue();
+				q.addWHERE(Tags.MEM_ID +"="+entry.getValue() );
+				//where = where + " AND  id = " + entry.getValue();
 				readWriteComponents2.remove(entry.getKey());
 			} 
 			
-			if(c.getOwner().equals(Tags.CENTRAL) && checkIfLocalOrGlobal().equals(Tags.PALAWAN))
-				where = where + " AND  area = " + 1;
-			else if (c.getOwner().equals(Tags.CENTRAL) && checkIfLocalOrGlobal().equals(Tags.MARINDUQUE))
-				where = where + " AND  area = " + 2;
+			if(c.getOwner().getName().equals(Tags.CENTRAL) && checkIfLocalOrGlobal().equals(Tags.PALAWAN)){
+				q.addWHERE(Tags.AREA + "= 1 ");
+			}
+			else if(c.getOwner().getName().equals(Tags.CENTRAL) && checkIfLocalOrGlobal().equals(Tags.CENTRAL)){
+				q.addWHERE(Tags.AREA + " = 2 ");
+			}
 		}
 
 		int i = 1;
@@ -237,36 +248,33 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 		readWriteComponents = readWriteComponents2;
 		
 		for(Entry<String, String> entry : readWriteComponents.entrySet()) {
-			if (i < readWriteComponents.size()) {
-				set = set + entry.getKey() + " = " + entry.getValue() + ", ";
-			} else {
-				set = set + entry.getKey() + " = " + entry.getValue();
-			}
-			i++;
+				q.addSET(entry.getKey() + " = " + entry.getValue() );
+				//set = set + entry.getKey() + " = " + entry.getValue() + ", ";
 		}
 
-		if(!where.isEmpty() && !set.isEmpty()) {
-			query = "UPDATE " + table + " " + set + " " + where;
-			System.out.println(query);
-		}
-
-		transactionQueries.add(query);
+		transactionQueries.add(c.writeQueryContructor(q));
 		readWriteComponents.clear();
 
-		return query;
+		return q;
 	}
 
-	public String getReadQuery() {
+	public Query getReadQuery() {
 		String query = "select hpq_hh_id, id, aquani_vol, aquanitype_o from hpq_aquani";
-		String where = "where ";
-		String[] attributeTitles = new String[5];
+		ArrayList<String>attributeTitles = new ArrayList<String>();
 
-		attributeTitles[0] = "hpq_hh_id";
-		attributeTitles[1] = "id";
-		attributeTitles[2] = "aquani_vol";
-		attributeTitles[3] = "aquanitype";
-		attributeTitles[4] = "aquanitype_o";
-
+		attributeTitles.add(Tags.HPQ_HH_ID);
+		attributeTitles.add(Tags.MEM_ID);
+		attributeTitles.add(Tags.AQUANI_VOL);
+		attributeTitles.add(Tags.AQUANI_TYPE);
+		attributeTitles.add(Tags.AQUANI_TYPE_O);
+		
+		//if hndi siya local or central siya -> add the column area 
+		if(!c.getOwner().getName().equals(checkIfLocalOrGlobal()) || 
+			c.getOwner().getName().equals(Tags.CENTRAL))
+			attributeTitles.add(Tags.AREA);
+		
+		Query q = new Query();
+		
 		Component[] children = queryEditPanel.getComponents();
 		for(int i = 0; i < children.length; i++) {
 			JPanel panel = (JPanel) children[i];
@@ -275,7 +283,8 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 				if(panelChildren[j] instanceof JTextField) {
 					String text = ((JTextField)panelChildren[j]).getText();
 					if(!text.isEmpty()) {
-						readWriteComponents.put(attributeTitles[i], text);
+						readWriteComponents.put(attributeTitles.get(i), text);
+						
 					}
 				}
 			}
@@ -284,34 +293,28 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 		int i = 1;
 		for(Entry<String, String> entry : readWriteComponents.entrySet()) {
 			if(i < readWriteComponents.size()) {
-				where = where + entry.getKey() + " = " + entry.getValue() + " AND ";
+				q.addWHERE(entry.getKey()+"="+entry.getValue() + " ");
+				
 			} else {
-				where = where + entry.getKey() + " = " + entry.getValue() + ";";
+				q.addWHERE(entry.getKey()+"="+entry.getValue() + " ");
 			}
 			i++;
 		}
 
-		if(!where.equals("where ")) {
-			query = query + " " + where;
-			if(c.getOwner().equals(Tags.CENTRAL) && checkIfLocalOrGlobal().equals(Tags.PALAWAN))
-				where = where + " AND  area = " + 1;
-			else if (c.getOwner().equals(Tags.CENTRAL) && checkIfLocalOrGlobal().equals(Tags.MARINDUQUE))
-				where = where + " AND  area = " + 2;
-			System.out.println(query);
-		} else {
-			if(c.getOwner().equals(Tags.CENTRAL) && checkIfLocalOrGlobal().equals(Tags.PALAWAN))
-				where = where + "area = " + 1;
-			else if (c.getOwner().equals(Tags.CENTRAL) && checkIfLocalOrGlobal().equals(Tags.MARINDUQUE))
-				where = where + "area = " + 2;
-			query = query + ";";
+		System.out.println("WRITE COMPONENTS SIZE: "+ readWriteComponents.size());
+	
+		if(c.getOwner().getName().equals(Tags.CENTRAL) && checkIfLocalOrGlobal().equals(Tags.PALAWAN)){
+			q.addWHERE(Tags.AREA + "= 1 ");
+		}
+		else if(c.getOwner().getName().equals(Tags.CENTRAL) && checkIfLocalOrGlobal().equals(Tags.CENTRAL)){
+			q.addWHERE(Tags.AREA + " = 2 ");
 		}
 
-		
-		
+		query = c.readQueryContructor(q);
 		transactionQueries.add(query);
 		readWriteComponents.clear();
 
-		return query;
+		return q;
 	}
 
 	public void createQueryEditPanel(ArrayList<String> attributeList) {
@@ -629,7 +632,7 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 			
 			
 			try {
-				c.SEND_QUERY_REQUEST(tranList);
+				c.SEND_QUERY_REQUEST(tranList, queryList);
 			} catch (Exception e1){
 				e1.printStackTrace();
 				System.out.println("UNABLE TO SEND QUERY REQUEST GUI");
@@ -648,16 +651,18 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 			}
 
 		}else if(e.getSource() == btnWrite && !textField.getText().isEmpty()){
-			String que = getWriteQuery();
-			addTransaction(que, true);
+			Query que = getWriteQuery();
+			addTransaction(c.writeQueryContructor(que), true);
 			//addTransaction("UPDATE numbers SET col = 999 WHERE id = 1;", true);
 			transactionList.append(transactionCounter + ". " + "Write " + que + "\n"); 
+			queryList.put(textField.getText().toString(), que);
 			transactionCounter++;
 		}else if (e.getSource() == btnRead && !textField.getText().isEmpty()){
-			String que = getReadQuery();
-			addTransaction(que,false);
+			Query que = getReadQuery();
+			addTransaction(c.readQueryContructor(que),false);
 			//addTransaction("SELECT * FROM numbers;", false);
 			transactionList.append(transactionCounter + ". " + "Read " + que + "\n"); 
+			queryList.put(textField.getText().toString(), que);
 			transactionCounter++;
 			
 		}

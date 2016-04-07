@@ -259,11 +259,13 @@ public class Transaction implements Runnable, Subject, Serializable{
 		if(tran_action == COMMIT){
 			try {
 				con.commit();
+				System.out.println("COMMITING transaction " + name + "....");
 				if(!isWrite)
 					notifyObservers();
+				
 				//if you have already committed and it is successful 
 				// send the confirmation back to central
-				if(goCommit && numUpdates != 0 && !receiver.getName().equals(Tags.CENTRAL)){
+				if(goCommit && numUpdates != 0){
 					sendCommitToReceiver();
 				}
 			}  catch (SQLException e) {
@@ -272,9 +274,9 @@ public class Transaction implements Runnable, Subject, Serializable{
 			}
 		}else if(tran_action == ABORT){
 			try {
-				System.out.println("Aborting Transaction "+name+"...");
+				System.out.println("ABORTING Transaction "+name+"...");
 				con.rollback();
-				System.out.println("Rolling Back Transaction "+name+"...");
+				System.out.println("ROLLING BACK Transaction "+name+"...");
 			} catch (SQLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -335,11 +337,11 @@ public class Transaction implements Runnable, Subject, Serializable{
 				System.out.println("NUM UPDATES: " + numUpdates);
 				
 				// if magwriwrite muna siya and success siya <- central
-				if(isWrite && numUpdates != 0){
+				if(isWrite && numUpdates != 0 && !goCommit){
 					sendPartialCommitStatusToSender(Tags.PARTIAL_COMMIT,name, sender);
 					
 				}// if magwriwrite muna siya and abort siya <- central
-				else if(isWrite && numUpdates == 0){
+				else if(isWrite && numUpdates == 0 && !goCommit){
 					sendPartialCommitStatusToSender(Tags.ABORT, name, sender);
 				}// if magreread lng siya
 				else if(!isWrite && cs != null){
