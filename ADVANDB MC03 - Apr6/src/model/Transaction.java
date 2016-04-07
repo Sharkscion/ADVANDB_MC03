@@ -334,15 +334,18 @@ public class Transaction implements Runnable, Subject, Serializable{
 				
 				System.out.println("TRAN RECEIVER: "+ receiver.getName());
 				System.out.println("TRAN SENDER: "+sender.getName());
+				System.out.println("TRAN ACTION");
 				System.out.println("QUERY: "+query);
 				System.out.println("NUM UPDATES: " + numUpdates);
 				
 				// if magwriwrite muna siya and success siya <- central
-				if(isWrite && numUpdates != 0 && !goCommit){
+				if(isWrite && numUpdates != 0 && !goCommit && tran_action == Transaction.COMMIT){
+					System.out.println("PUMAOSK NG COMMIT");
 					sendPartialCommitStatusToSender(Tags.PARTIAL_COMMIT,name, sender);
 					
 				}// if magwriwrite muna siya and abort siya <- central
 				else if((isWrite && numUpdates == 0 && !goCommit) || tran_action == Transaction.ABORT){
+					System.out.println("PUMASOK NG ABORT");
 					sendPartialCommitStatusToSender(Tags.ABORT, name, sender);
 				}// if magreread lng siya
 				else if(!isWrite && cs != null){
@@ -384,7 +387,7 @@ public class Transaction implements Runnable, Subject, Serializable{
 		 	tempOut.flush();
 		 	SOCK.close();
 			
-			System.out.println("FINISH SENDING");
+			System.out.println("FINISH SENDING ABORT");
 			
 		}catch(Exception e){
 			e.printStackTrace();
@@ -413,7 +416,7 @@ public class Transaction implements Runnable, Subject, Serializable{
 		 	tempOut.flush();
 		 	SOCK.close();
 			
-			System.out.println("FINISH SENDING");
+			System.out.println("FINISH SENDINGSUCCESS COMMIT");
 			
 		}catch(Exception e){
 			e.printStackTrace();

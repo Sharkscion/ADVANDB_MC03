@@ -632,6 +632,7 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 			
 			
 			try {
+				reset();
 				c.SEND_QUERY_REQUEST(tranList, queryList);
 			} catch (Exception e1){
 				e1.printStackTrace();
@@ -694,7 +695,7 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 		
 		System.out.println("QUERY: "+ query);
 		System.out.println("RECIEVEER GUI: "+receiver.getName());
-		
+		System.out.println("TRAN ACTION: "+ TRAN_ACTION);
 		TransactionMail t = new TransactionMail(query, receiver,textField.getText().toString());
 		t.setSender(c.getOwner());
 		
@@ -721,6 +722,11 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 		resultsTabbedPane.remove(index);
 		tablePanelList.remove(index);
 		System.out.println("Removed: " + (index+1));
+	}
+	
+	public void reset(){
+		transactionList.setText("");
+		textField.setText("");
 	}
 
 	@Override

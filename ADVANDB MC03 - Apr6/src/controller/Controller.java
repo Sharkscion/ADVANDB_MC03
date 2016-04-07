@@ -57,7 +57,6 @@ public class Controller implements Subject, QueryObserver
 		// instantiate database manager
 	}
 
-
 	public Site getOwner(){
 		return owner;
 	}
@@ -101,8 +100,12 @@ public class Controller implements Subject, QueryObserver
 			t.setSender(tm.getSender());
 			t.setIsolation_level(tm.getISO_LEVEL());
 			t.setTableName(tm.getTableName());
-			t.setTran_action(Transaction.COMMIT);
-			t.setGoCommit(true); // meaning go forth and commit
+			t.setTran_action(tm.getTranAction());
+			if(tm.getTranAction() == Transaction.COMMIT)
+				t.setGoCommit(true); // meaning go forth and commit
+			else{
+				t.setGoCommit(false);
+			}
 			t.setWrite(tm.isWrite());
 			t.beginTransaction();
 			t.runTransaction();
@@ -280,21 +283,32 @@ public class Controller implements Subject, QueryObserver
 		
 		String area ="";
 		Site sender = null;
-		
+		int removeWhere = 0;
 		for(int i = 0; i<q.getWHERE().size(); i++)
-			if(q.getWHERE().get(i).contains(Tags.AREA))
+			if(q.getWHERE().get(i).contains(Tags.AREA)){
 				area = q.getWHERE().get(i);
+				removeWhere = i;
+			}
 		
-		String parse[] = area.split("=", 2);
 		
 		
-		switch(parse[1]){
-			case "1": sender = owner.searchConnection(Tags.PALAWAN); break;
-			case "2": sender = owner.searchConnection(Tags.MARINDUQUE); break;
-			default: System.out.println("AREA NOT RECOGNIZED!");
+		String parse[] = area.split("= ", 2);
+		System.out.println("AREA: "+area);
+		System.out.println("PARSE: "+parse[1].trim());
+		
+		int areaID = Integer.parseInt(parse[1].trim());
+		if(areaID == 1){
+			System.out.println("PASOK PALAWAN");
+			sender = owner.searchConnection(Tags.PALAWAN);
 		}
-		
+		else if(areaID == 2)
+			sender = owner.searchConnection(Tags.MARINDUQUE);
+		else
+			System.out.println("AREA NOT RECOGNIZED!");
+	
 		if(isNodeConnected(sender)){
+			  q.getWHERE().remove(removeWhere);
+			  tm.setQuery(writeQueryContructor(q));
 			  tm.setSender(sender);
 			  EXECUTE_LOCAL_QUERY_REQUEST(tm);
 		  }else{
@@ -604,7 +618,7 @@ public class Controller implements Subject, QueryObserver
 	}
 	
 	public String writeQueryContructor(Query q){
-		String query = "UPDATE "+Tags.TABLE+ "SET ";
+		String query = "UPDATE "+Tags.TABLE+ " SET ";
 				
 		for(int index = 0; index<q.getSET().size(); index++)
 			if(index==0)
