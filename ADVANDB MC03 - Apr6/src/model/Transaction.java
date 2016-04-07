@@ -316,6 +316,7 @@ public class Transaction implements Runnable, Subject, Serializable{
 		try{			
 			if(!query.equals("")){
 				
+				System.out.println("QUERY FROM  TRANSACTION CLASS: "+ query);
 				preparedStatement = con.prepareStatement(query);
 	
 				if(!isWrite){
@@ -341,14 +342,14 @@ public class Transaction implements Runnable, Subject, Serializable{
 					sendPartialCommitStatusToSender(Tags.PARTIAL_COMMIT,name, sender);
 					
 				}// if magwriwrite muna siya and abort siya <- central
-				else if(isWrite && numUpdates == 0 && !goCommit){
+				else if((isWrite && numUpdates == 0 && !goCommit) || tran_action == Transaction.ABORT){
 					sendPartialCommitStatusToSender(Tags.ABORT, name, sender);
 				}// if magreread lng siya
 				else if(!isWrite && cs != null){
 					if(receiver.equals(sender) && cs != null){
 						notifyQueryObservers(cs); 
 					}
-					else if(cs != null){
+					else if(!receiver.equals(sender) && cs != null){
 						System.out.println("SENDING RESULT SET TO : "+sender.getName());
 						sendToSender(cs, sender);
 					}

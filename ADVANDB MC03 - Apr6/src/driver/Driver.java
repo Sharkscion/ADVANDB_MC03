@@ -12,10 +12,10 @@ public class Driver
 	public static void main(String[] args){
 		
 		// Starting the Server
-		Site owner = new Site("192.168.1.128", Tags.CENTRAL);
+		Site owner = new Site("192.168.1.118", Tags.CENTRAL);
 		Controller con = new Controller(owner);
-		con.add("192.168.1.124", Tags.PALAWAN);
-		con.add("10.100.199.129", Tags.MARINDUQUE);
+		con.add("192.168.1.104", Tags.PALAWAN);
+		con.add("192.168.1.125", Tags.MARINDUQUE);
 
 		Server SER = new Server(con, Tags.PORT);
 		Thread X = new Thread(SER);

@@ -217,7 +217,6 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 				}
 			}
 		}
-
 		
 		HashMap<String, String> readWriteComponents2 = (HashMap<String, String>) readWriteComponents.clone();
 		for(Entry<String, String> entry : readWriteComponents.entrySet()) {
@@ -233,15 +232,14 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 				//where = where + " AND  id = " + entry.getValue();
 				readWriteComponents2.remove(entry.getKey());
 			} 
-			
-			if(c.getOwner().getName().equals(Tags.CENTRAL) && checkIfLocalOrGlobal().equals(Tags.PALAWAN)){
-				q.addWHERE(Tags.AREA + "= 1 ");
-			}
-			else if(c.getOwner().getName().equals(Tags.CENTRAL) && checkIfLocalOrGlobal().equals(Tags.CENTRAL)){
-				q.addWHERE(Tags.AREA + " = 2 ");
-			}
 		}
 
+		if(c.getOwner().getName().equals(Tags.CENTRAL) && checkIfLocalOrGlobal().equals(Tags.PALAWAN)){
+			q.addWHERE(Tags.AREA + "= 1 ");
+		}
+		else if(c.getOwner().getName().equals(Tags.CENTRAL) && checkIfLocalOrGlobal().equals(Tags.MARINDUQUE)){
+			q.addWHERE(Tags.AREA + " = 2 ");
+		}
 		int i = 1;
 		
 		readWriteComponents.clear();
@@ -301,12 +299,13 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 			i++;
 		}
 
-		System.out.println("WRITE COMPONENTS SIZE: "+ readWriteComponents.size());
+		//System.out.println("WRITE COMPONENTS SIZE: "+ readWriteComponents.size());
 	
 		if(c.getOwner().getName().equals(Tags.CENTRAL) && checkIfLocalOrGlobal().equals(Tags.PALAWAN)){
 			q.addWHERE(Tags.AREA + "= 1 ");
 		}
-		else if(c.getOwner().getName().equals(Tags.CENTRAL) && checkIfLocalOrGlobal().equals(Tags.CENTRAL)){
+		else if(c.getOwner().getName().equals(Tags.CENTRAL) && checkIfLocalOrGlobal().equals(Tags.MARINDUQUE)){
+			System.out.println("HELLO AREA IS 2");
 			q.addWHERE(Tags.AREA + " = 2 ");
 		}
 
@@ -607,6 +606,7 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 		if (isPalawan && isMarinduque)
 			result = Tags.CENTRAL;
 
+		System.out.println("RESULT: "+ result);
 		return result;
 	}
 
@@ -680,15 +680,17 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 		
 		String siteChosen = checkIfLocalOrGlobal();
 		
+		System.out.println("OWNER: "+ c.getOwner().getName());
+		System.out.println("SITE CHOSEN: "+siteChosen);
 		if(c.getOwner().getName().equals(siteChosen))
 			receiver = c.getOwner();
-		else if(siteChosen.equals(Tags.CENTRAL))
-			receiver = c.searchForSite(Tags.CENTRAL);
+		else if(c.getOwner().getName().equals(Tags.CENTRAL))
+			receiver = c.getOwner();
 		else 
 			receiver = c.searchForSite(siteChosen);
 		
 		System.out.println("QUERY: "+ query);
-		System.out.println("SITE CHOSEN: "+siteChosen);
+		System.out.println("RECIEVEER GUI: "+receiver.getName());
 		
 		TransactionMail t = new TransactionMail(query, receiver,textField.getText().toString());
 		t.setSender(c.getOwner());

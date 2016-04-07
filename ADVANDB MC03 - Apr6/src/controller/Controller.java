@@ -587,13 +587,17 @@ public class Controller implements Subject, QueryObserver
 	}
 	
 	public String readQueryContructor(Query q){
-		String query = "SELECT * FROM " + Tags.TABLE + " WHERE ";
+		String query = "SELECT * FROM " + Tags.TABLE;
 				
-		for(int index = 0; index<q.getWHERE().size(); index++)
-			if(index==0)
-				query += q.getWHERE().get(index);
-			else
-				query += " AND " + q.getWHERE().get(index);
+		if(!q.getWHERE().isEmpty()){
+			query += " WHERE ";
+			for(int index = 0; index<q.getWHERE().size(); index++)
+				if(index==0)
+					query += q.getWHERE().get(index);
+				else
+					query += " AND " + q.getWHERE().get(index);
+		}
+		
 		
 		System.out.println("CONSTRUCTED READ WUERY: "+ query);
 		return query;
@@ -608,13 +612,15 @@ public class Controller implements Subject, QueryObserver
 			else
 				query += "," + q.getSET().get(index);
 		
-		query += " WHERE ";
 		
-		for(int index = 0; index<q.getWHERE().size(); index++)
-			if(index==0)
-				query += q.getWHERE().get(index);
-			else
-				query += " AND " + q.getWHERE().get(index);
+		if(!q.getWHERE().isEmpty()){
+			query += " WHERE ";
+			for(int index = 0; index<q.getWHERE().size(); index++)
+				if(index==0)
+					query += q.getWHERE().get(index);
+				else
+					query += " AND " + q.getWHERE().get(index);
+		}
 		
 		System.out.println("CONSTRUCTED READ WUERY: "+ query);
 		return query;
