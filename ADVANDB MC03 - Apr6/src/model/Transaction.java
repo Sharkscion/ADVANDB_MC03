@@ -1,54 +1,16 @@
 package model;
 
-import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.io.Reader;
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.net.Socket;
-import java.net.URL;
-import java.security.acl.Owner;
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.Clob;
 import java.sql.Connection;
-import java.sql.Date;
-import java.sql.NClob;
 import java.sql.PreparedStatement;
-import java.sql.Ref;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.RowId;
 import java.sql.SQLException;
-import java.sql.SQLWarning;
-import java.sql.SQLXML;
-import java.sql.Savepoint;
-import java.sql.Statement;
-import java.sql.Time;
-import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Map;
-
-import javax.sql.RowSet;
-import javax.sql.RowSetEvent;
-import javax.sql.RowSetListener;
-import javax.sql.RowSetMetaData;
-import javax.sql.rowset.CachedRowSet;
-import javax.sql.rowset.RowSetWarning;
-import javax.sql.rowset.spi.SyncProvider;
-import javax.sql.rowset.spi.SyncProviderException;
 
 import com.sun.rowset.CachedRowSetImpl;
-
-import controller.Controller;
 
 public class Transaction implements Runnable, Subject, Serializable{
 	/**
@@ -80,6 +42,7 @@ public class Transaction implements Runnable, Subject, Serializable{
 	private boolean isWrite;
 	private String query;
 	private boolean goCommit;
+	private boolean goAbort;
 
 	private Site receiver;
 	private Site sender;
@@ -117,7 +80,17 @@ public class Transaction implements Runnable, Subject, Serializable{
 		this.receiver = receiver;
 		this.query = query;
 		this.name = tranName;
+		this.goCommit = false;
+		this.goAbort = false;
 		isolation_level = ISO_SERIALIZABLE;
+	}
+	
+	public boolean isGoAbort() {
+		return goAbort;
+	}
+
+	public void setGoAbort(boolean goAbort) {
+		this.goAbort = goAbort;
 	}
 	
 	public Site getReceiver() {
@@ -275,6 +248,9 @@ public class Transaction implements Runnable, Subject, Serializable{
 		}else if(tran_action == ABORT){
 			try {
 				System.out.println("ABORTING Transaction "+name+"...");
+				if(goAbort){
+					sendAbortToReceiver();
+				}
 				con.rollback();
 				System.out.println("ROLLING BACK Transaction "+name+"...");
 			} catch (SQLException e) {
@@ -283,6 +259,9 @@ public class Transaction implements Runnable, Subject, Serializable{
 			}
 		}else{
 			try {
+				if(goAbort){
+					sendAbortToReceiver();
+				}
 				con.rollback();
 				System.out.println("Rolling Back Transaction "+name+"...");
 			} catch (SQLException e) {
@@ -334,7 +313,7 @@ public class Transaction implements Runnable, Subject, Serializable{
 				
 				System.out.println("TRAN RECEIVER: "+ receiver.getName());
 				System.out.println("TRAN SENDER: "+sender.getName());
-				System.out.println("TRAN ACTION");
+				System.out.println("TRAN ACTION: "+ tran_action);
 				System.out.println("QUERY: "+query);
 				System.out.println("NUM UPDATES: " + numUpdates);
 				
@@ -345,8 +324,10 @@ public class Transaction implements Runnable, Subject, Serializable{
 					
 				}// if magwriwrite muna siya and abort siya <- central
 				else if((isWrite && numUpdates == 0 && !goCommit) || tran_action == Transaction.ABORT){
+					
 					System.out.println("PUMASOK NG ABORT");
 					sendPartialCommitStatusToSender(Tags.ABORT, name, sender);
+					
 				}// if magreread lng siya
 				else if(!isWrite && cs != null){
 					if(receiver.equals(sender) && cs != null){
@@ -466,9 +447,6 @@ public class Transaction implements Runnable, Subject, Serializable{
 		
 		if(!isWrite)
 			endTransaction();
-		
-//		if(isWrite && goCommit)
-//			endTransaction();
 	}
 
 	public void sendToSender(CachedRowSetImpl cs, Site sender){

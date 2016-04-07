@@ -1,18 +1,12 @@
 package controller;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -104,7 +98,7 @@ public class Controller implements Subject, QueryObserver
 			if(tm.getTranAction() == Transaction.COMMIT)
 				t.setGoCommit(true); // meaning go forth and commit
 			else{
-				t.setGoCommit(false);
+				t.setGoAbort(true);
 			}
 			t.setWrite(tm.isWrite());
 			t.beginTransaction();
@@ -125,7 +119,7 @@ public class Controller implements Subject, QueryObserver
 			t.setIsolation_level(tm.getISO_LEVEL());
 			t.setTableName(tm.getTableName());
 			t.setTran_action(Transaction.ABORT);
-			//t.setGoCommit(true); // meaning go forth and commit
+			t.setGoAbort(true);// meaning go forth and commit
 			t.setWrite(tm.isWrite());
 			t.beginTransaction();
 			t.runTransaction();
