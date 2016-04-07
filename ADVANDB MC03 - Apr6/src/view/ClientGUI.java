@@ -58,7 +58,6 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 	private Site client;
 	private Controller c;
 	private ArrayList<CachedRowSetImpl> rsList;
-	private ArrayList<TransactionMail> tranList;
 	private String ISO_LEVEL;
 	private int TRAN_ACTION;
 	
@@ -96,7 +95,6 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 
 		this.c = con;
 		this.c.registerObserver(this);
-		this.tranList = new ArrayList<TransactionMail>();
 		this.ISO_LEVEL = "";
 		this.TRAN_ACTION = Transaction.COMMIT;
 		this.queryList = new HashMap<String, Query>();
@@ -633,30 +631,29 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 			
 			try {
 				reset();
-				c.SEND_QUERY_REQUEST(tranList, queryList);
+				c.SEND_QUERY_REQUEST();
+				resultsTabbedPane.removeAll();
+				tablePanelList.clear();
+				
+				for(int i = 0; i<transactionList.getLineCount()-1; i++){
+					TablePanel tablePanel= new TablePanel("");
+					tablePanel.setBackground(Color.WHITE);
+					resultsTabbedPane.addTab(textField.getText().toString(), null, tablePanel, null);
+					resultsTabbedPane.setSelectedIndex(resultsTabbedPane.getTabCount()-1);
+					tablePanel.setCorrespondingTab(this,resultsTabbedPane.getSelectedIndex()); //select last one
+					tablePanelList.add(resultsTabbedPane.getSelectedIndex(),tablePanel);
+				}
 			} catch (Exception e1){
 				e1.printStackTrace();
 				System.out.println("UNABLE TO SEND QUERY REQUEST GUI");
-			}
-			
-			resultsTabbedPane.removeAll();
-			tablePanelList.clear();
-			
-			for(int i = 0; i<transactionList.getLineCount()-1; i++){
-				TablePanel tablePanel= new TablePanel("");
-				tablePanel.setBackground(Color.WHITE);
-				resultsTabbedPane.addTab(textField.getText().toString(), null, tablePanel, null);
-				resultsTabbedPane.setSelectedIndex(resultsTabbedPane.getTabCount()-1);
-				tablePanel.setCorrespondingTab(this,resultsTabbedPane.getSelectedIndex()); //select last one
-				tablePanelList.add(resultsTabbedPane.getSelectedIndex(),tablePanel);
-			}
+			}	
 
 		}else if(e.getSource() == btnWrite && !textField.getText().isEmpty()){
 			Query que = getWriteQuery();
 			String sQuery = c.writeQueryContructor(que);
 			addTransaction(sQuery, true);
 			transactionList.append(transactionCounter + ". " + "Write " + sQuery + "\n"); 
-			queryList.put(textField.getText().toString(), que);
+			c.addQueryList(textField.getText().toString(), que);
 			transactionCounter++;
 			
 		}else if (e.getSource() == btnRead && !textField.getText().isEmpty()){
@@ -664,7 +661,7 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 			String sQuery = c.readQueryContructor(que);
 			addTransaction(sQuery,false);
 			transactionList.append(transactionCounter + ". " + "Read " + sQuery + "\n"); 
-			queryList.put(textField.getText().toString(), que);
+			c.addQueryList(textField.getText().toString(), que);
 			transactionCounter++;
 			
 		}
@@ -706,8 +703,7 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 		t.setTableName(Tags.TABLE);
 		t.setTranAction(TRAN_ACTION);
 		t.setWrite(isWrite);
-		
-		tranList.add(t);
+		c.addTransactionMail(t);
 	}
 	
 	public void closeTab(int index){

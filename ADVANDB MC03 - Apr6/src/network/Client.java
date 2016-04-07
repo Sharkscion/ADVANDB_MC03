@@ -62,7 +62,7 @@ public class Client {
 				    		System.out.println("==ABORT STATUS RECEIVED==");
 			    			String mailServer2[] = rMail.getMessage().split(Tags.PROTOCOL, 2);
 			    			System.out.println("MAIL SVER 1: "+ mailServer2[1]);
-			    			c.COMMIT_TRANSACTION(mailServer2[1].trim());break;
+			    			c.ABORT_TRANSACTION(mailServer2[1].trim());break;
 			    	default: System.out.println("PROTOCOL NOT RECOGNIZED!");
 			    }
 			   

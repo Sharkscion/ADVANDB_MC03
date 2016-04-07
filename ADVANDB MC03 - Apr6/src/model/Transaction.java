@@ -318,12 +318,12 @@ public class Transaction implements Runnable, Subject, Serializable{
 				System.out.println("NUM UPDATES: " + numUpdates);
 				
 				// if magwriwrite muna siya and success siya <- central
-				if(isWrite && numUpdates != 0 && !goCommit && tran_action == Transaction.COMMIT){
+				if(isWrite &&  !goCommit && tran_action == Transaction.COMMIT){
 					System.out.println("PUMAOSK NG COMMIT");
 					sendPartialCommitStatusToSender(Tags.PARTIAL_COMMIT,name, sender);
 					
 				}// if magwriwrite muna siya and abort siya <- central
-				else if((isWrite && numUpdates == 0 && !goCommit) || tran_action == Transaction.ABORT){
+				else if(isWrite  && !goAbort && tran_action == Transaction.ABORT){
 					
 					System.out.println("PUMASOK NG ABORT");
 					sendPartialCommitStatusToSender(Tags.PARTIAL_ABORT, name, sender);

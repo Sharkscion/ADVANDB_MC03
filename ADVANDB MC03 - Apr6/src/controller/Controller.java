@@ -36,7 +36,7 @@ public class Controller implements Subject, QueryObserver
 	private ArrayList<CachedRowSetImpl> rsList;
 	private HashMap<String, Transaction>partialList;
 	private HashMap<String, Query> queryList;
-	
+	private ArrayList<TransactionMail> tranList;
 	public Controller(Site owner)
 	{
 		this.owner = owner;
@@ -47,10 +47,20 @@ public class Controller implements Subject, QueryObserver
 		obList = new ArrayList<Observer>();
 		partialList = new HashMap<String, Transaction>();
 		queryList = new HashMap<String, Query>();
+		this.tranList = new ArrayList<TransactionMail>();
+		this.queryList = new HashMap<String, Query>();
 	
 		// instantiate database manager
 	}
 
+	public void addTransactionMail(TransactionMail t){
+		tranList.add(t);
+	}
+	
+	public void addQueryList(String tranName,Query q){
+		queryList.put(tranName,q);
+	}
+	
 	public Site getOwner(){
 		return owner;
 	}
@@ -288,7 +298,6 @@ public class Controller implements Subject, QueryObserver
 		
 		String parse[] = area.split("= ", 2);
 		System.out.println("AREA: "+area);
-		System.out.println("PARSE: "+parse[1].trim());
 		
 		int areaID = Integer.parseInt(parse[1].trim());
 		if(areaID == 1){
@@ -496,19 +505,20 @@ public class Controller implements Subject, QueryObserver
  * PALAWAN SENDING QUERY END
  * **********************/
 	
-	public void SEND_QUERY_REQUEST(ArrayList<TransactionMail> tList, HashMap<String, Query> qList) throws UnknownHostException, IOException
+	public void SEND_QUERY_REQUEST() throws UnknownHostException, IOException
 	{
 		System.out.println("==STARTING SENDING QUERY REQUEST==");
 		Site receiver = null;
 		String mail = Tags.RETURN_READ + Tags.PROTOCOL;
 		rsList = new ArrayList<CachedRowSetImpl>();
-		this.queryList = qList;
 		
-		for(TransactionMail tm : tList){
+		
+		for(TransactionMail tm : tranList){
 			rsList.clear();
 			
-			Query q = qList.get(tm.getTranName());
-			
+			Query q = queryList.get(tm.getTranName());
+			if(q == null)
+				System.out.println("WAANG LAMN");
 			switch(owner.getName()){
 				case Tags.CENTRAL: 
 						  if(!tm.isWrite())
@@ -541,7 +551,9 @@ public class Controller implements Subject, QueryObserver
 				default: System.out.println("SITE NOT RECOGNIZED!");	  
 			}
 		}
-
+		
+		queryList.clear();
+		tranList.clear();
 		System.out.println("==SENDING QUERY REQUEST END==");
 	 }
 
