@@ -8,6 +8,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.sql.ResultSetMetaData;
@@ -84,6 +85,8 @@ public class Controller implements Subject, QueryObserver
 		Transaction t =  partialList.get(name);
 		t.setTran_action(Transaction.ABORT);
 		t.endTransaction();
+		System.out.println("ABORTING TRANSACTION: " + name);
+		
 	}
 	
 	public void PARTIAL_COMMIT_FROM_CENTRAL(Mail rMail){
@@ -253,15 +256,16 @@ public class Controller implements Subject, QueryObserver
 
 			Socket SOCKET;
 			try {
-				SOCKET = new Socket(s.getIpadd(), Tags.PORT);
+				SOCKET = new Socket();
+				SOCKET.connect(new InetSocketAddress(s.getIpadd(), Tags.PORT),5000);
 				//SOCKET.setSoTimeout(5000);
 				SOCKET.close();
 			} catch (UnknownHostException e) {
-				e.printStackTrace();
+				//e.printStackTrace();
 				return false;
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				//e.printStackTrace();
 				return false;
 			}
 			
@@ -351,7 +355,7 @@ public class Controller implements Subject, QueryObserver
 			  receiver = owner.searchConnection(Tags.CENTRAL);
 			  
 			  if(isNodeConnected(receiver)){//check if central is connected
-				  q.addWHERE(Tags.AREA+"="+2);
+				  q.addWHERE(Tags.AREA+"="+1);
 				  tm.setQuery(readQueryContructor(q));
 				  tm.setReceiver(receiver);
 				  m.setTm(tm);
@@ -375,8 +379,7 @@ public class Controller implements Subject, QueryObserver
 				  
 				  receiver = owner.searchConnection(Tags.PALAWAN);
 				  if(isNodeConnected(receiver)){
-					  q.getWHERE().remove(q.getWHERE().size()-1);
-					  tm.setQuery(readQueryContructor(q));
+					 
 					  tm.setReceiver(owner);
 					  EXECUTE_LOCAL_QUERY_REQUEST(tm);
 					  
@@ -407,7 +410,7 @@ public class Controller implements Subject, QueryObserver
 		if(tm.getReceiver().equals(tm.getSender())){
 			receiver = owner.searchConnection(Tags.CENTRAL);
 			if(isNodeConnected(receiver)){
-				System.out.println("SENDING WRITE REQUEST FROM MARIN");
+				System.out.println("SENDING WRITE REQUEST FROM PALAWAN");
 				//set receiver of the qrite request to central
 				tm.setReceiver(receiver);
 				m.setTm(tm);
@@ -428,7 +431,6 @@ public class Controller implements Subject, QueryObserver
 				System.out.println("FINISH SENDING WRITE MARIN DATA REQUEST TO CENTRAL");
 
 			}
-			
 		}
 	}
 
@@ -470,8 +472,6 @@ public class Controller implements Subject, QueryObserver
 				  
 				  receiver = owner.searchConnection(Tags.MARINDUQUE);
 				  if(isNodeConnected(receiver)){
-					  q.getWHERE().remove(q.getWHERE().size()-1);
-					  tm.setQuery(readQueryContructor(q));
 					  tm.setReceiver(owner);
 					  EXECUTE_LOCAL_QUERY_REQUEST(tm);
 					  

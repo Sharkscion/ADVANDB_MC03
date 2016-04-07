@@ -652,23 +652,26 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 
 		}else if(e.getSource() == btnWrite && !textField.getText().isEmpty()){
 			Query que = getWriteQuery();
-			addTransaction(c.writeQueryContructor(que), true);
-			//addTransaction("UPDATE numbers SET col = 999 WHERE id = 1;", true);
-			transactionList.append(transactionCounter + ". " + "Write " + que + "\n"); 
+			String sQuery = c.writeQueryContructor(que);
+			addTransaction(sQuery, true);
+			transactionList.append(transactionCounter + ". " + "Write " + sQuery + "\n"); 
 			queryList.put(textField.getText().toString(), que);
 			transactionCounter++;
+			
 		}else if (e.getSource() == btnRead && !textField.getText().isEmpty()){
 			Query que = getReadQuery();
-			addTransaction(c.readQueryContructor(que),false);
-			//addTransaction("SELECT * FROM numbers;", false);
-			transactionList.append(transactionCounter + ". " + "Read " + que + "\n"); 
+			String sQuery = c.readQueryContructor(que);
+			addTransaction(sQuery,false);
+			transactionList.append(transactionCounter + ". " + "Read " + sQuery + "\n"); 
 			queryList.put(textField.getText().toString(), que);
 			transactionCounter++;
 			
 		}
 		else if(e.getSource() == rbAbort){
 			TRAN_ACTION = Transaction.ABORT;
+			
 		}else if (e.getSource() == rbCommit){
+			
 			TRAN_ACTION = Transaction.COMMIT;
 		}
 
