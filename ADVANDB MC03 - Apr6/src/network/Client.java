@@ -50,14 +50,19 @@ public class Client {
 			    			System.out.println("==PARTIAL COMMIT STATUS RECEIVED==");
 			    			c.PARTIAL_COMMIT_FROM_CENTRAL(rMail);
 			    			break;
-			    	case Tags.ABORT:
-			    			System.out.println("==ABORT COMMIT STATUS RECEIVED==");
+			    	case Tags.PARTIAL_ABORT:
+			    			System.out.println("==PARTIAL ABORT COMMIT STATUS RECEIVED==");
 			    			c.ABORT_FROM_CENTRAL(rMail);break;
 			    	case Tags.COMMIT:
 			    			System.out.println("==COMMIT STATUS RECEIVED==");
 			    			String mailServer[] = rMail.getMessage().split(Tags.PROTOCOL, 2);
 			    			System.out.println("MAIL SVER 1: "+ mailServer[1]);
 			    			c.COMMIT_TRANSACTION(mailServer[1].trim());break;
+			    	case Tags.ABORT:
+				    		System.out.println("==ABORT STATUS RECEIVED==");
+			    			String mailServer2[] = rMail.getMessage().split(Tags.PROTOCOL, 2);
+			    			System.out.println("MAIL SVER 1: "+ mailServer2[1]);
+			    			c.COMMIT_TRANSACTION(mailServer2[1].trim());break;
 			    	default: System.out.println("PROTOCOL NOT RECOGNIZED!");
 			    }
 			   

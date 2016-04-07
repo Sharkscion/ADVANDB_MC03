@@ -14,8 +14,9 @@ public class Tags {
 	
 	public static final String WRITE_EXECUTE = "0x008";
 	public static final String PARTIAL_COMMIT = "0x009";
-	public static final String ABORT = "0x010";
+	public static final String PARTIAL_ABORT = "0x010";
 	public static final String COMMIT = "0x011";
+	public static final String ABORT = "0x012";
 	
 	public static final String PROTOCOL ="%";
 	

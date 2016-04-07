@@ -326,7 +326,7 @@ public class Transaction implements Runnable, Subject, Serializable{
 				else if((isWrite && numUpdates == 0 && !goCommit) || tran_action == Transaction.ABORT){
 					
 					System.out.println("PUMASOK NG ABORT");
-					sendPartialCommitStatusToSender(Tags.ABORT, name, sender);
+					sendPartialCommitStatusToSender(Tags.PARTIAL_ABORT, name, sender);
 					
 				}// if magreread lng siya
 				else if(!isWrite && cs != null){
