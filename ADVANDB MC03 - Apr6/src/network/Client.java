@@ -33,15 +33,19 @@ public class Client {
 
 			    System.out.println(">>Client received mail<<");
 			    
+			    System.out.println("GET MESSGAE: "+ rMail.getMessage());
 			    String protocol[] = rMail.getMessage().split(Tags.PROTOCOL, 2);
 			    System.out.println("MAIL SERVER PROTOCOL: "+protocol[0]);
 			    
 			    switch(protocol[0]){
 			    	case Tags.RETURN_READ: 
 			    			/** query-> index 0   sender-> index 1**/
-			    			System.out.println("==REQUEST TO EXECUTE QUERY RECEIVED==");
+			    			System.out.println("==REQUEST TO EXECUTE READ QUERY RECEIVED==");
 			     			c.EXECUTE_QUERY_REQUEST(rMail);
 			    		break;
+			    	case Tags.EXECUTE_WRITE:
+			    		    System.out.println("==REQUEST TO EXECUTE WRITE QUERY RECEIVED==");
+		     			    c.EXECUTE_LOCAL_QUERY_WRITE_REQUEST(rMail.getTm());    
 			    	case Tags.RESULT_SET:
 			    			System.out.println("==RESULT SET RECEIVED==");
 			    			c.RECEIVE_RESULT_SET(rMail);

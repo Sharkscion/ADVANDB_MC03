@@ -14,6 +14,7 @@ import java.awt.event.ActionListener;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,7 +25,10 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 
+import com.sun.rowset.CachedRowSetImpl;
+
 import model.DBConnection;
+import model.TableContents;
 import controller.Controller;
 
 /**
@@ -40,7 +44,7 @@ public class TablePanel extends JPanel{
     private Vector<Vector<Object>> data = new Vector<Vector<Object>>();
     private JScrollPane scrollTable;
     private DBConnection dbc;
-    private ResultSet rs;
+    private ArrayList<CachedRowSetImpl> rsList;
     private ResultSetMetaData metaData = null;
     private String[] cols = {"Hello","Hi","O Elo", "Bonjour"}; 
     private Object[][] rows = {};
@@ -66,9 +70,10 @@ public class TablePanel extends JPanel{
     public void createTable(){
         this.setLayout(null);
         this.setBackground(Color.decode("#8c9bab"));
-        if(metaData != null){
+        if(data!= null){
              // dtModel = new DefaultTableModel(data,columnNames);
             tableData = new JTable(dtModel); //tableData = new JTable(dtModel);
+            System.out.println("SET NEW TABLE");
         }else{
             dtModel = new DefaultTableModel(rows,cols);
             tableData = new JTable(dtModel);
@@ -89,40 +94,22 @@ public class TablePanel extends JPanel{
     /*from http://stackoverflow.com/questions/10620448/most-simple-code-to-populate-jtable-from-resultset 
         This function puts all data of the query to the JTable
     */
-    public DefaultTableModel buildTableModel(ResultSet rs){
-        try {
-            metaData = rs.getMetaData();
-            // names of columns
-            Vector<String> columnNames = new Vector<String>();
-            int columnCount = metaData.getColumnCount();
-            for (int column = 1; column <= columnCount; column++) {
-                columnNames.add(metaData.getColumnName(column));
-            }
-            // data of the table
-            Vector<Vector<Object>> data = new Vector<Vector<Object>>();
-            while (rs.next()) {
-                Vector<Object> vector = new Vector<Object>();
-                for (int columnIndex = 1; columnIndex <= columnCount; columnIndex++) {
-                    vector.add(rs.getObject(columnIndex));
-                }
-                data.add(vector);
-            }
-            
+    public DefaultTableModel buildTableModel(TableContents tc){
+ 
+    	//System.out.println("SET: "+ tc.getTranName());
+        columnNames = tc.getColumnNames();
+        data = tc.getData();
         return new DefaultTableModel(data, columnNames);
-        } catch(SQLException ex) {
-            Logger.getLogger(DBConnection.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    return null;
     }
 
-    public void setResultSet(ResultSet rs) {
-        this.rs = rs;
-        //dtModel = null;
-        //createTable();
-        //dtModel.fireTableStructureChanged();
+    public void setResultSet(TableContents tc) {
+  //      this.rsList = rs;
+//        dtModel = null;
+//        createTable();
+//        dtModel.fireTableStructureChanged();
         
         this.removeAll();   //Table will hang after populating table, so u need to refresh by removing all then repainting and revalidating
-        dtModel = buildTableModel(rs);
+        dtModel = buildTableModel(tc);
         createTable();
         dtModel.fireTableStructureChanged();
         repaint();

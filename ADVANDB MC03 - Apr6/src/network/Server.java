@@ -28,6 +28,7 @@ public class Server implements Runnable {
 				//	SS.setSoTimeout(10000);
 					Socket X = SS.accept(); 	// Accepts connections
 					c = new Client(controller, X); 			// Creates a new client for each connection
+					//X.close();
 				}
 			}
 			catch(Exception ex){

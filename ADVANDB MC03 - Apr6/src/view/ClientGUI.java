@@ -17,6 +17,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Vector;
 
@@ -48,6 +49,7 @@ import model.Observer;
 import model.Query;
 import model.ResultSets;
 import model.Site;
+import model.TableContents;
 import model.Tags;
 import model.Transaction;
 import model.TransactionMail;
@@ -57,11 +59,11 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 
 	private Site client;
 	private Controller c;
-	private ArrayList<CachedRowSetImpl> rsList;
+	private TableContents rsList;
 	private String ISO_LEVEL;
 	private int TRAN_ACTION;
 	
-	private JPanel topPanel, bottomPanel;
+	private JPanel topPanel, EastPanel;
 	private JPanel queryPanel, abortCommitPanel, mainPanel, isolationPanel;
 	private JPanel defaultPanel;
 	private JPanel transactionsPanel, queryEditPanel;
@@ -81,9 +83,11 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 
 	private HashMap<String, JTextField> queryComponents;
 	private JButton btnSubmit;
-	private HashMap<String, Query> queryList;
+	private HashMap<String, JPanel> tableReadList;
 
-	private ArrayList<TablePanel> tablePanelList = new ArrayList<TablePanel>();
+	private ArrayList<String> readTranList;
+
+	private HashMap<Integer,TablePanel> tablePanelList = new HashMap<Integer, TablePanel>();
 	private ArrayList<String> transactionQueries = new ArrayList<String>();
 	private HashMap<String, String> readWriteComponents = new HashMap<String, String>();
 	private int transactionCounter = 1;
@@ -97,7 +101,8 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 		this.c.registerObserver(this);
 		this.ISO_LEVEL = "";
 		this.TRAN_ACTION = Transaction.COMMIT;
-		this.queryList = new HashMap<String, Query>();
+		this.tableReadList = new HashMap<String, JPanel>();
+		this.readTranList = new ArrayList<String>();
 		
 		try {
 			UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
@@ -109,9 +114,8 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 
 		createTopPanel();
 		createBottomPanel();
-		createButtonsPanel();
 		mainPanel.add(topPanel, BorderLayout.WEST);  
-		mainPanel.add(bottomPanel, BorderLayout.EAST);
+		mainPanel.add(EastPanel, BorderLayout.EAST);
 
 		setBackground(Color.gray);
 		setSize(1000, 700);
@@ -123,7 +127,12 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 		setLocation(dim.width/2-this.getSize().width/2, dim.height/2-this.getSize().height/2);
 	}
 
-	public void createButtonsPanel(){
+	public HashMap<String, JPanel> getTableReadList() {
+		return tableReadList;
+	}
+
+	public void setTableReadList(HashMap<String, JPanel> tableReadList) {
+		this.tableReadList = tableReadList;
 	}
 
 	public JPanel createQueryPanel(){
@@ -218,16 +227,12 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 		
 		HashMap<String, String> readWriteComponents2 = (HashMap<String, String>) readWriteComponents.clone();
 		for(Entry<String, String> entry : readWriteComponents.entrySet()) {
-			System.out.println("ENTRY: " + entry.getKey());
 			if(entry.getKey().equals(Tags.HPQ_HH_ID)){
 				q.addWHERE(Tags.HPQ_HH_ID +"="+entry.getValue() );
-				
-			//	where =  where + " hpq_hh_id = " + entry.getValue() + " ";
 				readWriteComponents2.remove(entry.getKey());
 			}
 			if(entry.getKey().equals("id")){
 				q.addWHERE(Tags.MEM_ID +"="+entry.getValue() );
-				//where = where + " AND  id = " + entry.getValue();
 				readWriteComponents2.remove(entry.getKey());
 			} 
 		}
@@ -296,14 +301,11 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 			}
 			i++;
 		}
-
-		//System.out.println("WRITE COMPONENTS SIZE: "+ readWriteComponents.size());
 	
 		if(c.getOwner().getName().equals(Tags.CENTRAL) && checkIfLocalOrGlobal().equals(Tags.PALAWAN)){
 			q.addWHERE(Tags.AREA + "= 1 ");
 		}
 		else if(c.getOwner().getName().equals(Tags.CENTRAL) && checkIfLocalOrGlobal().equals(Tags.MARINDUQUE)){
-			System.out.println("HELLO AREA IS 2");
 			q.addWHERE(Tags.AREA + " = 2 ");
 		}
 
@@ -477,85 +479,85 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 
 
 	public void createBottomPanel() {
-		bottomPanel = new JPanel();
-		bottomPanel.setPreferredSize(new Dimension(600, 350));
-		bottomPanel.setLayout(new BorderLayout());
+		EastPanel = new JPanel();
+		EastPanel.setPreferredSize(new Dimension(600, 350));
+		EastPanel.setLayout(new BorderLayout());
 		Border border = BorderFactory.createTitledBorder("Dataset");
 		Border margin = BorderFactory.createEmptyBorder(10,10,10,10);
-		bottomPanel.setBorder(new CompoundBorder(border, margin));
+		EastPanel.setBorder(new CompoundBorder(border, margin));
 
 		resultsTabbedPane = new JTabbedPane(JTabbedPane.TOP);
 		resultsTabbedPane.setBackground(Color.RED);
-		bottomPanel.add(resultsTabbedPane, BorderLayout.CENTER);
+		EastPanel.add(resultsTabbedPane, BorderLayout.CENTER);
 		//bottomPanel.add(createTablePanel(), BorderLayout.CENTER);
 	}
 
-	public JPanel createTablePanel() {
-		JPanel tablePanel = new JPanel();
-		tablePanel.setLayout(new BorderLayout());
-
-		JScrollPane pane = new JScrollPane(createJTable());
-		tablePanel.add(pane, BorderLayout.CENTER);
-
-		return tablePanel;
-	}
-
-	public JTable createJTable(){
-		JTable table = new JTable();
-		//DefaultTableModel dataModel = new DefaultTableModel();
-		 Vector<Vector<Object>> data = null;
-		 Vector<String> columnNames = null;
-		 
-		for(CachedRowSetImpl rs : rsList){
-				ResultSetMetaData metaData;
-			
-				try {
-					metaData = rs.getMetaData();
-					 // names of columns
-				    columnNames = new Vector<String>();
-				    int columnCount = metaData.getColumnCount();
-				    for (int column = 1; column <= columnCount; column++) {
-				        columnNames.add(metaData.getColumnName(column));
-				    }
-		
-				    // data of the table
-				    data = new Vector<Vector<Object>>();
-				    while (rs.next()) {
-				        Vector<Object> vector = new Vector<Object>();
-				        for (int columnIndex = 1; columnIndex <= columnCount; columnIndex++) {
-				            vector.add(rs.getObject(columnIndex));
-				        }
-				        data.add(vector);
-				    } 
-				} catch (SQLException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			   
-			}
-	    
-	    DefaultTableModel dataModel = new DefaultTableModel(data, columnNames);
+//	public JPanel createTablePanel() {
+//		JPanel tablePanel = new JPanel();
+//		tablePanel.setLayout(new BorderLayout());
 //
-//		try {
-//			for(CachedRowSetImpl rs : rsList){
-//				System.out.println("CACHED SIED: "+ rs.getRow());
-//				ResultSetMetaData mdata = rs.getMetaData();
-//				int colCount = mdata.getColumnCount();		
-//				String[] colNames = getColumnNames(colCount, mdata);
-//				dataModel.setColumnIdentifiers(colNames);
-//				while (rs.next()) {
-//					String[] rowData = new String[colCount];
-//					for (int i = 1; i <= colCount; i++) {
-//						rowData[i - 1] = rs.getString(i);
-//					}
-//					dataModel.addRow(rowData);
-//				}
-//			}
-//		} catch (SQLException e) {}
+//		JScrollPane pane = new JScrollPane(createJTable(rsList));
+//		tablePanel.add(pane, BorderLayout.CENTER);
+//
+//		return tablePanel;
+//	}
 
-		table.setModel(dataModel);
-		return table;
-	}
+//	public JTable createJTable(TableContents rsList){
+//		JTable table = new JTable();
+//		//DefaultTableModel dataModel = new DefaultTableModel();
+//		 Vector<Vector<Object>> data = null;
+//		 Vector<String> columnNames = null;
+//		 
+//		for(CachedRowSetImpl rs : rsList){
+//				ResultSetMetaData metaData;
+//			
+//				try {
+//					metaData = rs.getMetaData();
+//					 // names of columns
+//				    columnNames = new Vector<String>();
+//				    int columnCount = metaData.getColumnCount();
+//				    for (int column = 1; column <= columnCount; column++) {
+//				        columnNames.add(metaData.getColumnName(column));
+//				    }
+//		
+//				    // data of the table
+//				    data = new Vector<Vector<Object>>();
+//				    while (rs.next()) {
+//				        Vector<Object> vector = new Vector<Object>();
+//				        for (int columnIndex = 1; columnIndex <= columnCount; columnIndex++) {
+//				            vector.add(rs.getObject(columnIndex));
+//				        }
+//				        data.add(vector);
+//				    } 
+//				} catch (SQLException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
+//			   
+//			}
+//	    
+//	    DefaultTableModel dataModel = new DefaultTableModel(data, columnNames);
+////
+////		try {
+////			for(CachedRowSetImpl rs : rsList){
+////				System.out.println("CACHED SIED: "+ rs.getRow());
+////				ResultSetMetaData mdata = rs.getMetaData();
+////				int colCount = mdata.getColumnCount();		
+////				String[] colNames = getColumnNames(colCount, mdata);
+////				dataModel.setColumnIdentifiers(colNames);
+////				while (rs.next()) {
+////					String[] rowData = new String[colCount];
+////					for (int i = 1; i <= colCount; i++) {
+////						rowData[i - 1] = rs.getString(i);
+////					}
+////					dataModel.addRow(rowData);
+////				}
+////			}
+////		} catch (SQLException e) {}
+//
+//		table.setModel(dataModel);
+//		return table;
+//	}
 
 	public String[] getColumnNames(int colCount, ResultSetMetaData mdata) throws SQLException {
 		String[] colNames = new String[colCount];
@@ -582,14 +584,45 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 		}
 	}
 
-	public void updateTable() {
-		bottomPanel.removeAll();
-		JTable table = createJTable();
-		JScrollPane pane = new JScrollPane(table);
-		updateRowHeights(table);
-		bottomPanel.add(pane, BorderLayout.CENTER);
-		bottomPanel.revalidate();
-		bottomPanel.repaint();
+	public void updateTable(String tranName) {
+		//EastPanel.removeAll();
+		
+		TablePanel tpanel = (TablePanel) tableReadList.get(tranName);
+		int tabCount = resultsTabbedPane.getTabCount();
+		System.out.println("TAB COUNT: "+tabCount);
+		for(int i=0; i<tabCount; i++){
+			if(tablePanelList.get(i).equals(tpanel))
+			{
+				System.out.println("PASOK");
+				 tpanel.setBackground(Color.WHITE);
+				 //resultsTabbedPane.remove(i);
+				 tpanel.setResultSet(rsList);
+				 tpanel.setCorrespondingTab(this,resultsTabbedPane.getSelectedIndex()); //select last one
+				 tablePanelList.replace(i, tpanel);
+				 resultsTabbedPane.addTab(tranName, null, tpanel, null);
+				 resultsTabbedPane.setSelectedIndex(resultsTabbedPane.getTabCount()-1);
+				 
+			}
+		}
+		
+		
+//		System.out.println("TAB COUNT: "+ tabCount);
+//		for(int i=0; i<tabCount;i++){
+//			if(resultsTabbedPane.getComponentAt(i).equals(tpanel)){
+//				resultsTabbedPane.remove(i);
+//				tpanel.setResultSet(rsList);
+//				resultsTabbedPane.addTab(tranName, null, tpanel, null);
+//				resultsTabbedPane.setSelectedIndex(resultsTabbedPane.getTabCount()-1);
+//		        tpanel.setCorrespondingTab(this,resultsTabbedPane.getSelectedIndex()); //select last one
+//			}
+//		}
+		
+//		JTable table = createJTable(rsList);
+//		JScrollPane pane = new JScrollPane(table);
+//		updateRowHeights(table);
+//		EastPanel.add(pane, BorderLayout.CENTER);
+		EastPanel.revalidate();
+		EastPanel.repaint();
 	}
 
 	public String checkIfLocalOrGlobal(){
@@ -604,7 +637,6 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 		if (isPalawan && isMarinduque)
 			result = Tags.CENTRAL;
 
-		System.out.println("RESULT: "+ result);
 		return result;
 	}
 
@@ -628,21 +660,40 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 
 		}else if(e.getSource() == btnSubmit && !textField.getText().isEmpty()){
 			
-			
+			System.out.println("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
 			try {
-				reset();
-				c.SEND_QUERY_REQUEST();
-				resultsTabbedPane.removeAll();
+				//yung list of tables na i agdidisplay ng result set 
 				tablePanelList.clear();
-				
-				for(int i = 0; i<transactionList.getLineCount()-1; i++){
-					TablePanel tablePanel= new TablePanel("");
-					tablePanel.setBackground(Color.WHITE);
-					resultsTabbedPane.addTab(textField.getText().toString(), null, tablePanel, null);
-					resultsTabbedPane.setSelectedIndex(resultsTabbedPane.getTabCount()-1);
-					tablePanel.setCorrespondingTab(this,resultsTabbedPane.getSelectedIndex()); //select last one
-					tablePanelList.add(resultsTabbedPane.getSelectedIndex(),tablePanel);
-				}
+				//yung name ng transaction and yung table panel
+	    		tableReadList.clear();
+	    		resultsTabbedPane.removeAll();
+	    		
+	    		 for(int i = 0; i < readTranList.size(); i++){
+		                TablePanel tablePanel= new TablePanel("");
+		                tablePanel.setBackground(Color.WHITE);
+		                resultsTabbedPane.addTab(readTranList.get(i).toString(), null, tablePanel, null);
+		                resultsTabbedPane.setSelectedIndex(resultsTabbedPane.getTabCount()-1);
+		                tablePanel.setCorrespondingTab(this,resultsTabbedPane.getSelectedIndex()); //select last one
+		                tablePanelList.put(resultsTabbedPane.getSelectedIndex(),tablePanel);
+		               // System.out.println("SELECTED INDEX: "+resultsTabbedPane.getSelectedIndex());
+		                tableReadList.put(readTranList.get(i), tablePanel);
+		            }
+			           
+	    		
+				c.SEND_QUERY_REQUEST();
+		        //tablePanelList.clear();
+	            
+	            //CLEAR TRANSACTION LIST ??NOT SURE WHEN TO RESET
+	            transactionQueries.clear();
+	    		transactionCounter = 1;
+				transactionList.setText("");
+	    		transactionList.repaint();
+	    		transactionList.revalidate();
+	    		readTranList.clear();
+	    		textField.setText("");
+			
+	    		System.out.println("TAB COUNT AFTER SENDING: "+ resultsTabbedPane.getTabCount());
+				System.out.println("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
 			} catch (Exception e1){
 				e1.printStackTrace();
 				System.out.println("UNABLE TO SEND QUERY REQUEST GUI");
@@ -654,12 +705,13 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 			addTransaction(sQuery, true);
 			transactionList.append(transactionCounter + ". " + "Write " + sQuery + "\n"); 
 			c.addQueryList(textField.getText().toString(), que);
-			transactionCounter++;
+			//transactionCounter++;
 			
 		}else if (e.getSource() == btnRead && !textField.getText().isEmpty()){
 			Query que = getReadQuery();
 			String sQuery = c.readQueryContructor(que);
 			addTransaction(sQuery,false);
+			readTranList.add(textField.getText().toString());
 			transactionList.append(transactionCounter + ". " + "Read " + sQuery + "\n"); 
 			c.addQueryList(textField.getText().toString(), que);
 			transactionCounter++;
@@ -681,8 +733,6 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 		
 		String siteChosen = checkIfLocalOrGlobal();
 		
-		System.out.println("OWNER: "+ c.getOwner().getName());
-		System.out.println("SITE CHOSEN: "+siteChosen);
 		if(c.getOwner().getName().equals(siteChosen))
 			receiver = c.getOwner();
 		else if(c.getOwner().getName().equals(Tags.CENTRAL))
@@ -690,9 +740,7 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 		else 
 			receiver = c.searchForSite(siteChosen);
 		
-		System.out.println("QUERY: "+ query);
-		System.out.println("RECIEVEER GUI: "+receiver.getName());
-		System.out.println("TRAN ACTION: "+ TRAN_ACTION);
+		
 		TransactionMail t = new TransactionMail(query, receiver,textField.getText().toString());
 		t.setSender(c.getOwner());
 		
@@ -709,28 +757,29 @@ public class ClientGUI extends JFrame implements ActionListener, Observer{
 	public void closeTab(int index){
 
 		if(index!=resultsTabbedPane.getTabCount()-1){
-			for(int i = index+1;i< tablePanelList.size(); i++){
+			for(int i = index+1;i< readTranList.size(); i++){
 				System.out.println("ITERATE: "+ (i)+"OLD: " + tablePanelList.get(i).getTabIndex()+ "NEW: " + (tablePanelList.get(i).getTabIndex()-1));
 				tablePanelList.get(i).changeTabIndex(tablePanelList.get(i).getTabIndex()-1);
 			}
+			resultsTabbedPane.remove(index);
+			//tablePanelList.remove(index);
+			System.out.println("Removed: " + (index+1));
 		}
 
-		resultsTabbedPane.remove(index);
-		tablePanelList.remove(index);
-		System.out.println("Removed: " + (index+1));
+	
 	}
 	
-	public void reset(){
-		transactionList.setText("");
-		textField.setText("");
-	}
+
 
 	@Override
-	public void update() {
+	public void update(String tranName) {
 		// TODO Auto-generated method stub
-		rsList = c.getResultSets();
-		System.out.println("RS LIST: "+ rsList.size());
-		updateTable();
+		
+		
+		rsList = c.getResultSets().get(tranName);
+		System.out.println("rsList: "+ rsList.getTranName());
+		//System.out.println("RS LIST: "+ rsList.get());
+		updateTable(tranName);
 	}
 
 }

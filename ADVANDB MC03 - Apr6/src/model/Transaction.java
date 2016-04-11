@@ -12,6 +12,8 @@ import java.util.ArrayList;
 
 import com.sun.rowset.CachedRowSetImpl;
 
+import controller.Controller;
+
 public class Transaction implements Runnable, Subject, Serializable{
 	/**
 	 * 
@@ -204,37 +206,38 @@ public class Transaction implements Runnable, Subject, Serializable{
 	public void beginTransaction(){
 		
 		String queryLock = "";
-		System.out.println("\nBegin Transaction ");
-		
-		try {
-			
-			if(isWrite){
-				queryLock = "LOCK TABLES "+tableName+" WRITE;";
-			}else
-				queryLock = "LOCK TABLES "+tableName+" READ;";
-		
-			preparedStatement = con.prepareStatement(queryLock);
-			preparedStatement.execute();
-			
-			preparedStatement = con.prepareStatement("START TRANSACTION;");
-			preparedStatement.executeQuery();
-			
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		System.out.println("\nBegin Transaction >>>" + name);
+//		
+//		try {
+//			
+//			if(isWrite){
+//				queryLock = "LOCK TABLES "+tableName+" WRITE;";
+//			}else
+//				queryLock = "LOCK TABLES "+tableName+" READ;";
+//		
+//			preparedStatement = con.prepareStatement(queryLock);
+//			preparedStatement.execute();
+//			
+//			preparedStatement = con.prepareStatement("START TRANSACTION;");
+//			preparedStatement.executeQuery();
+//			
+//		} catch (SQLException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//			System.out.println("WAITING TO RECEIVE LOCK : "+name);
+//		}
 	}
 	
 	public void endTransaction(){
 		
-		System.out.println("End Transaction: " + name + "\n");
+		System.out.println("END TRANSACTION: " + name + "\n");
 		
 		if(tran_action == COMMIT){
 			try {
 				con.commit();
-				System.out.println("COMMITING transaction " + name + "....");
+				System.out.println("COMMITING TRANSACTION " + name + "....");
 				if(!isWrite)
-					notifyObservers();
+					notifyObservers(name);
 				
 				//if you have already committed and it is successful 
 				// send the confirmation back to central
@@ -247,12 +250,12 @@ public class Transaction implements Runnable, Subject, Serializable{
 			}
 		}else if(tran_action == ABORT){
 			try {
-				System.out.println("ABORTING Transaction "+name+"...");
+				System.out.println("ABORTING TRANSACTION "+name+"...");
 				if(goAbort){
 					sendAbortToReceiver();
 				}
 				con.rollback();
-				System.out.println("ROLLING BACK Transaction "+name+"...");
+				System.out.println("ROLLING BACK TRANSACTION "+name+"...");
 			} catch (SQLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -263,7 +266,7 @@ public class Transaction implements Runnable, Subject, Serializable{
 					sendAbortToReceiver();
 				}
 				con.rollback();
-				System.out.println("Rolling Back Transaction "+name+"...");
+				System.out.println("ROLLING BACK TRANSACTION "+name+"...");
 			} catch (SQLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -271,14 +274,15 @@ public class Transaction implements Runnable, Subject, Serializable{
 		}
 		
 		
-		try {
-			String queryLock = "UNLOCK TABLES;";
-			preparedStatement = con.prepareStatement(queryLock);
-			preparedStatement.execute();
-		} catch (SQLException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
+//		try {
+//			String queryLock = "UNLOCK TABLES;";
+//			preparedStatement = con.prepareStatement(queryLock);
+//			preparedStatement.execute();
+//			System.out.println(">>TABLE " +tableName + " IS UNLOCKED<<");
+//		} catch (SQLException e1) {
+//			// TODO Auto-generated catch block
+//			e1.printStackTrace();
+//		}
 		
 	}
 	
@@ -309,29 +313,25 @@ public class Transaction implements Runnable, Subject, Serializable{
 				}
 				else
 					numUpdates = preparedStatement.executeUpdate(query);
-			
-				
-				System.out.println("TRAN RECEIVER: "+ receiver.getName());
-				System.out.println("TRAN SENDER: "+sender.getName());
-				System.out.println("TRAN ACTION: "+ tran_action);
-				System.out.println("QUERY: "+query);
-				System.out.println("NUM UPDATES: " + numUpdates);
 				
 				// if magwriwrite muna siya and success siya <- central
 				if(isWrite &&  !goCommit && tran_action == Transaction.COMMIT){
-					System.out.println("PUMAOSK NG COMMIT");
+					System.out.println("SENDING PARTIAL COMMIT STATUS TO: "+sender.getName());
 					sendPartialCommitStatusToSender(Tags.PARTIAL_COMMIT,name, sender);
 					
 				}// if magwriwrite muna siya and abort siya <- central
 				else if(isWrite  && !goAbort && tran_action == Transaction.ABORT){
 					
-					System.out.println("PUMASOK NG ABORT");
+					System.out.println("SENDING PARTIAL ABORT STATUS TO: "+sender.getName());
 					sendPartialCommitStatusToSender(Tags.PARTIAL_ABORT, name, sender);
 					
 				}// if magreread lng siya
 				else if(!isWrite && cs != null){
 					if(receiver.equals(sender) && cs != null){
-						notifyQueryObservers(cs); 
+//						
+//						TableContents tc = Controller.rsList.get(name);
+//						System.out.println("TABLE OF CONTENTS IN TC: "+ tc.getTranName());
+						notifyQueryObservers(name, Controller.setTableContentsRow(name, cs)); 
 					}
 					else if(!receiver.equals(sender) && cs != null){
 						System.out.println("SENDING RESULT SET TO : "+sender.getName());
@@ -348,16 +348,14 @@ public class Transaction implements Runnable, Subject, Serializable{
 	}
 	
 	public void sendAbortToReceiver(){
-		System.out.println("SENDING ABORT COMMIT");
 		
 		try{
-			System.out.println("PARTIAL ABORT COMMIT TO BE SENT TO : "+receiver.getName());
-			
+			System.out.println("SENDING ABORT TRANSACTION "+name+" TO: "+ receiver.getName());
+
 			//send the protocol and the transaction name
 			String mail = Tags.ABORT+ Tags.PROTOCOL + name;
 			Mail m = new Mail(mail);			
 			
-			System.out.println("TO BE SENT TO: " + receiver.getName());
 			
 			Socket SOCK = new Socket(receiver.getIpadd(),Tags.PORT);
 			OutputStream tempOut = SOCK.getOutputStream();
@@ -368,7 +366,7 @@ public class Transaction implements Runnable, Subject, Serializable{
 		 	tempOut.flush();
 		 	SOCK.close();
 			
-			System.out.println("FINISH SENDING ABORT");
+			System.out.println("FINISH SENDING ABORT TRANSACTION TO: "+ receiver.getName());
 			
 		}catch(Exception e){
 			e.printStackTrace();
@@ -376,12 +374,12 @@ public class Transaction implements Runnable, Subject, Serializable{
 		}
 	}
 	public void sendCommitToReceiver(){
-		
-		System.out.println("SENDING SUCCESS COMMIT");
-		
+				
 		try{
-			System.out.println("PARTIAL COMMIT SUCCESS TO BE SENT TO : "+receiver.getName());
-			System.out.println("NAME OF TRANSACTION: " + name);
+			
+			System.out.println("SENDING COMMIT TRANSACTION "+name+" TO: "+ receiver.getName());
+
+		
 			//send the protocol and the transaction name
 			String mail = Tags.COMMIT + Tags.PROTOCOL + name;
 			
@@ -397,7 +395,7 @@ public class Transaction implements Runnable, Subject, Serializable{
 		 	tempOut.flush();
 		 	SOCK.close();
 			
-			System.out.println("FINISH SENDINGSUCCESS COMMIT");
+			System.out.println("FINISH SENDING SUCCESS COMMIT");
 			
 		}catch(Exception e){
 			e.printStackTrace();
@@ -407,9 +405,8 @@ public class Transaction implements Runnable, Subject, Serializable{
 
 	public void sendPartialCommitStatusToSender(String sp, String tranName, Site sender){
 		try{
-			System.out.println("PARTIAL COMMIT STATUS TO BE SENT TO : "+sender.getName());
+			System.out.println("PARTIAL COMMIT STATUS "+sp+" TO BE SENT TO : "+sender.getName());
 			//send the protocol and the transaction name
-			System.out.println("STATUS: "+ sp);
 			TransactionMail tm = new TransactionMail(query, receiver, name);
 			tm.setSender(sender);
 			tm.setISO_LEVEL(isolation_level);
@@ -431,7 +428,7 @@ public class Transaction implements Runnable, Subject, Serializable{
 		 	tempOut.flush();
 		 	SOCK.close();
 			
-			System.out.println("FINISH SENDING");
+			System.out.println("FINISH SENDING PARTIAL COMMIT STATUS");
 			
 		}catch(Exception e){
 			e.printStackTrace();
@@ -453,11 +450,13 @@ public class Transaction implements Runnable, Subject, Serializable{
 		
 		try{
 			
-			System.out.println("TO BE SENT TO: " + sender.getName() + " IP: "+ sender.getIpadd() + "#");
+			System.out.println("READ QUERY RESULT SET TO BE SENT TO: " + sender.getName() + " IP: "+ sender.getIpadd() + "#");
 			Socket SOCK = new Socket(sender.getIpadd(),Tags.PORT);
 			String sProtocol = Tags.RESULT_SET + Tags.PROTOCOL;
 			
 			Mail m = new Mail(sProtocol);
+			TransactionMail tm = new TransactionMail(sProtocol, receiver, name);
+			m.setTm(tm);
 			m.setCs(cs);
 			
 			OutputStream tempOut = SOCK.getOutputStream();
@@ -468,7 +467,7 @@ public class Transaction implements Runnable, Subject, Serializable{
 		 	tempOut.flush();
 		 	SOCK.close();
 		 	
-			System.out.println("FINISH SENDING");
+			System.out.println("FINISH SENDING READ QUERY RESULT SET");
 		}catch(Exception e){
 			e.printStackTrace();
 			System.out.println("FAILED TO SEND RESULT SET TO : "+ sender);
@@ -477,8 +476,6 @@ public class Transaction implements Runnable, Subject, Serializable{
 	@Override
 	public void registerObserver(Observer o) {
 		// TODO Auto-generated method stub
-		if(obList == null)
-			System.out.println("NUL DE TAE");
 		obList.add((QueryObserver) o);
 	}
 
@@ -489,17 +486,17 @@ public class Transaction implements Runnable, Subject, Serializable{
 	}
 
 	@Override
-	public void notifyObservers() {
+	public void notifyObservers(String name) {
 		// TODO Auto-generated method stub
 		for(QueryObserver o: obList)
-			o.update();
+			o.update(name);
 	}
 	
 	@Override
-	public void notifyQueryObservers(CachedRowSetImpl rs) {
+	public void notifyQueryObservers(String tranName, TableContents tc) {
 		// TODO Auto-generated method stub
 		for(QueryObserver o: obList){
-			o.updateResultSet(rs);
+			o.updateResultSet(tranName, tc);
 		}
 	}
 }

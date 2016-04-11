@@ -10,6 +10,7 @@ public class Tags {
 	
 	public static final String RETURN_READ = "0x005";
 	public static final String EXECUTE_READ = "0x006";
+	public static final String EXECUTE_WRITE = "0x013";
 	public static final String RESULT_SET = "0x007";
 	
 	public static final String WRITE_EXECUTE = "0x008";

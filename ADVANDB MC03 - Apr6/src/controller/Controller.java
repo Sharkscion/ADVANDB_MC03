@@ -7,8 +7,13 @@ import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Vector;
+
+
 
 import model.Mail;
 import model.Observer;
@@ -17,6 +22,7 @@ import model.QueryObserver;
 import model.ResultSets;
 import model.Site;
 import model.Subject;
+import model.TableContents;
 import model.Tags;
 import model.Transaction;
 import model.TransactionMail;
@@ -33,7 +39,7 @@ public class Controller implements Subject, QueryObserver
 	private PrintWriter OUT;
 	private ResultSets rs;
 	private Transaction t;
-	private ArrayList<CachedRowSetImpl> rsList;
+	private static HashMap<String,TableContents> rsList;
 	private HashMap<String, Transaction>partialList;
 	private HashMap<String, Query> queryList;
 	private ArrayList<TransactionMail> tranList;
@@ -41,7 +47,6 @@ public class Controller implements Subject, QueryObserver
 	{
 		this.owner = owner;
 		SOCK = null;
-		OUT = null;
 		rs = null;
 		t = null;
 		obList = new ArrayList<Observer>();
@@ -64,16 +69,15 @@ public class Controller implements Subject, QueryObserver
 	public Site getOwner(){
 		return owner;
 	}
-	public void setResultSets(ArrayList<CachedRowSetImpl> rs){
+	public void setResultSets( HashMap<String, TableContents> rs){
 		this.rsList = rs;
 	}
-	public ArrayList<CachedRowSetImpl> getResultSets(){
+	public HashMap<String, TableContents> getResultSets(){
 		return this.rsList;
 	}
 
 	public void add(String ip, String name){
 		Site newSite = new Site(ip,name);
-		System.out.println("NEW SITE: "+ newSite.getName());
 		owner.addConnection(newSite);
 	}
 	
@@ -81,14 +85,14 @@ public class Controller implements Subject, QueryObserver
 		Transaction t =  partialList.get(name);
 		t.setTran_action(Transaction.COMMIT);
 		t.endTransaction();
-		System.out.println("FINISH COMMITING");
+		System.out.println("FINISH COMMITING TRANSACTION: "+name);
 	}
 	
 	public void ABORT_TRANSACTION(String name){
 		Transaction t =  partialList.get(name);
 		t.setTran_action(Transaction.ABORT);
 		t.endTransaction();
-		System.out.println("ABORTING TRANSACTION: " + name);
+		System.out.println("FINISH ABORTING TRANSACTION: " + name);
 		
 	}
 	
@@ -97,7 +101,7 @@ public class Controller implements Subject, QueryObserver
 		//receiver yung nag taga execute muna ng write-> which mostlikely si central
 		//sender yung nag send ng request and mag rereceive ng PARTIAL commit status from central
 		//check if central ay buhay habang nag wriwrite siya
-			System.out.println("RECEIVEED PARTIAL COMMIT STATUS FORM CENTRAL");
+			System.out.println("RECEIVED PARTIAL COMMIT STATUS FORM CENTRAL");
 			
 			TransactionMail tm = rMail.getTm();
 			Transaction t = new Transaction(tm.getQuery(), tm.getReceiver(), tm.getTranName());
@@ -114,14 +118,14 @@ public class Controller implements Subject, QueryObserver
 			t.beginTransaction();
 			t.runTransaction();
 			t.endTransaction();
-			System.out.println("END COMMIT UPDATE TRANSACTION THAT IS RECEIVED FROM CENTRAL");
+			System.out.println("FINISH COMMITING UPDATE TRANSACTION RECEIVED FROM CENTRAL");
 	}
 	
 	public void ABORT_FROM_CENTRAL(Mail rMail){
 		//receiver yung nag taga execute muna ng write-> which mostlikely si central
 		//sender yung nag send ng request and mag rereceive ng PARTIAL commit status from central
 		//check if central ay buhay habang nag wriwrite siya
-			System.out.println("RECEIVEED ABORT STATUS FORM CENTRAL");
+			System.out.println("RECEIVED PARTIAL ABORT STATUS FROM CENTRAL");
 			
 			TransactionMail tm = rMail.getTm();
 			Transaction t = new Transaction(tm.getQuery(), tm.getReceiver(), tm.getTranName());
@@ -134,11 +138,11 @@ public class Controller implements Subject, QueryObserver
 			t.beginTransaction();
 			t.runTransaction();
 			t.endTransaction();
-			System.out.println("END ABORT UPDATE TRANSACTION THAT IS RECEIVED FROM CENTRAL");		
+			System.out.println("FINISH ABORTING UPDATE TRANSACTION RECEIVED FROM CENTRAL");		
 	}
 	
 	public void EXECUTE_LOCAL_QUERY_REQUEST(TransactionMail tm){
-		System.out.println("EXECUTING LOCAL QUERY REQUEST: "+ owner.getName());
+		System.out.println("EXECUTING LOCAL QUERY REQUEST: "+ tm.getTranName());
 		
 		Transaction t = new Transaction(tm.getQuery(), tm.getReceiver(), tm.getTranName());		
 		t.setSender(tm.getSender());
@@ -157,25 +161,49 @@ public class Controller implements Subject, QueryObserver
 		}
 		
 		if(tm.isWrite()){
-			System.out.println("SET PARTIAL COMMIT TO TRANSACTION");
 			partialList.put(tm.getTranName(), t);
 		}
+		
+		System.out.println("FINISH EXECUTING LOCAL QUERY REQUEST: "+tm.getTranName());
 	
 	}
 	
+	public synchronized void EXECUTE_LOCAL_QUERY_WRITE_REQUEST(TransactionMail tm){
+		System.out.println("EXECUTING LOCAL QUERY REQUEST: "+ tm.getTranName());
+		
+		Transaction t = new Transaction(tm.getQuery(), tm.getReceiver(), tm.getTranName());		
+		t.setSender(tm.getSender());
+		t.setIsolation_level(tm.getISO_LEVEL());
+		t.setTableName(tm.getTableName());
+		t.setTran_action(tm.getTranAction());
+		t.setWrite(tm.isWrite());
+		t.registerObserver(this);
+		
+		if(tm.isWrite()){
+			t.beginTransaction();
+			t.runTransaction();
+		}else{
+			Thread tr = new Thread(t);
+			tr.start();
+		}
+		
+		if(tm.isWrite()){
+			partialList.put(tm.getTranName(), t);
+		}
+		
+		System.out.println("FINISH EXECUTING LOCAL QUERY REQUEST: "+tm.getTranName());
 	
+	}
 	public void EXECUTE_QUERY_REQUEST(Mail rMail){
-		System.out.println("EXECUTING RETURN QUERY");
+		System.out.println("EXECUTING QUERY REQUEST: "+rMail.getTm().getTranName());
 	
 		TransactionMail tm;
-		
 		tm= rMail.getTm();
-		System.out.println("STARTING THREAD");
 		
 		Transaction t = new Transaction(tm.getQuery(), tm.getReceiver(), tm.getTranName());		
 		
-		System.out.println("ReCEIVER: "+ tm.getReceiver().getName());
-		System.out.println("SENDER: "+tm.getSender().getName() + " IP:"+tm.getSender().getIpadd()+"#");
+		System.out.println("RECEIVER OF QUERY: "+ tm.getReceiver().getName());
+		System.out.println("SENDER OF QUERY: "+tm.getSender().getName() + " IP:"+tm.getSender().getIpadd()+"#");
 		
 		t.setSender(tm.getSender());
 		t.setIsolation_level(tm.getISO_LEVEL());
@@ -194,23 +222,56 @@ public class Controller implements Subject, QueryObserver
 		//t.registerObserver(this);
 		
 		if(tm.isWrite()){
-			System.out.println("SET PARTIAL COMMIT TO TRANSACTION");
 			partialList.put(tm.getTranName(), t);
-		}	
-	
+		}
+		
+		System.out.println("FINISH EXECUTING QUERY REQUEST: "+rMail.getTm().getTranName());
 	}
 	
 	public void RECEIVE_RESULT_SET(Mail rMail){
 	
 		CachedRowSetImpl cas = rMail.getCs();
-		
+		String tranName = rMail.getTm().getTranName();
 		if(cas == null)
 			System.out.println("NULL SI CRS :(");
 		else{
-			System.out.println("RECEIVED RESULT");
-			updateResultSet(cas);
-			notifyObservers();
+			updateResultSet(tranName,setTableContentsRow(tranName, cas));
+			notifyObservers(rMail.getTm().getTranName());
 		}	
+	}
+	
+	public static TableContents setTableContentsRow(String tranName, CachedRowSetImpl cas){
+		 
+		TableContents tc = rsList.get(tranName);
+		ResultSetMetaData metaData;
+		try {
+			metaData = cas.getMetaData();
+			  Vector<String> columnNames = new Vector<String>();
+	         int columnCount = metaData.getColumnCount();
+	         for (int column = 1; column <= columnCount; column++) {
+	            columnNames.add(metaData.getColumnName(column));
+	         }
+	         
+	         tc.setColumnNames(columnNames);
+	         // data of the table
+	         while (cas.next()) {
+	        	 Vector<Object> vector = new Vector<Object>();
+	             //row of the table
+	             for (int columnIndex = 1; columnIndex <= columnCount; columnIndex++) {
+	                 vector.add(cas.getObject(columnIndex));
+	             }
+	             
+	             tc.getData().add(vector);
+	         }
+	         
+	         return tc;
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}  
+		
+		return null;
+      
 	}
 	
 //	public static byte[] byteConcat(byte[] A, byte[] B) {
@@ -239,9 +300,8 @@ public class Controller implements Subject, QueryObserver
 		try{
 			
 			Site receiver = mail.getTm().getReceiver();
-//			byte[] mailQuery = serialize(mail);
-			
-			System.out.println("TO BE SENT TO: " + receiver.getName());
+
+			System.out.println("SENDING QUERY TO: " + receiver.getName());
 			
 			Socket SOCK = new Socket(receiver.getIpadd(),Tags.PORT);
 			OutputStream tempOut = SOCK.getOutputStream();
@@ -252,7 +312,7 @@ public class Controller implements Subject, QueryObserver
 			tempOut.flush();
 		 	SOCK.close();
 		 	
-			System.out.println("FINISH SENDING TO: "+ receiver.getName());
+			System.out.println("FINISH SENDING QUERY TO: "+ receiver.getName());
 		}catch(Exception e){
 			e.printStackTrace();
 			System.out.println("FAILED TO SEND RESULT SET TO : "+ mail.getTm().getReceiver().getName());
@@ -269,10 +329,13 @@ public class Controller implements Subject, QueryObserver
 				SOCKET.close();
 			} catch (UnknownHostException e) {
 				//e.printStackTrace();
+				System.out.println(s.getName()+ " IS NOT CONNECTED!");
 				return false;
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				//e.printStackTrace();
+				System.out.println(s.getName()+ " IS NOT CONNECTED!");
+
 				return false;
 			}
 			
@@ -294,8 +357,6 @@ public class Controller implements Subject, QueryObserver
 				removeWhere = i;
 			}
 		
-		
-		
 		String parse[] = area.split("= ", 2);
 		System.out.println("AREA: "+area);
 		
@@ -313,7 +374,7 @@ public class Controller implements Subject, QueryObserver
 			  q.getWHERE().remove(removeWhere);
 			  tm.setQuery(writeQueryContructor(q));
 			  tm.setSender(sender);
-			  EXECUTE_LOCAL_QUERY_REQUEST(tm);
+			  EXECUTE_LOCAL_QUERY_WRITE_REQUEST(tm);
 		  }else{
 			  System.out.println("UNABLE TO WRITE FROM"+sender.getName()+ "IS DOWN!");
 		  }
@@ -362,7 +423,6 @@ public class Controller implements Subject, QueryObserver
 		Site receiver = null;
 		Mail m = new Mail(mail);
 		
-		System.out.println("HELLO RECEIVER FROM MARIN: "+ tm.getReceiver().getName());
 		//If local yung query
 		  if(tm.getReceiver().equals(tm.getSender()))
 			  EXECUTE_LOCAL_QUERY_REQUEST(tm);
@@ -388,12 +448,13 @@ public class Controller implements Subject, QueryObserver
 				  }
 			  }
 		  }else if(tm.getReceiver().getName().equals(Tags.CENTRAL)){
-			  System.out.println("SENDING TO CENTRAL");
+			  System.out.println("SENDING QUERY TO CENTRAL");
 			  if(isNodeConnected(tm.getReceiver())){
 				  m.setTm(tm);
 				  SEND_QUERY_TO_RECEIVER(m); //send to central
 			  }else{
 				  
+				  System.out.println("CENTRAL IS NOT CONNECTED!");
 				  receiver = owner.searchConnection(Tags.PALAWAN);
 				  if(isNodeConnected(receiver)){
 					 
@@ -455,7 +516,6 @@ public class Controller implements Subject, QueryObserver
 		Site receiver = null;
 		Mail m = new Mail(mail);
 		
-		System.out.println("HELLO RECEIVER FROM PALAWAN: "+ tm.getReceiver().getName());
 		//If local yung query
 		  if(tm.getReceiver().equals(tm.getSender()))
 			  EXECUTE_LOCAL_QUERY_REQUEST(tm);
@@ -509,14 +569,21 @@ public class Controller implements Subject, QueryObserver
 	{
 		System.out.println("==STARTING SENDING QUERY REQUEST==");
 		Site receiver = null;
-		String mail = Tags.RETURN_READ + Tags.PROTOCOL;
-		rsList = new ArrayList<CachedRowSetImpl>();
-		
+		String mail = "";
+		rsList = new HashMap<String, TableContents>();
 		
 		for(TransactionMail tm : tranList){
-			rsList.clear();
 			
 			Query q = queryList.get(tm.getTranName());
+			
+			if(!tm.isWrite()){
+				System.out.println("NAME OF TRANSACTION TO BE READ: "+tm.getTranName());
+				rsList.put(tm.getTranName(), new TableContents(tm.getTranName()));	
+				mail = Tags.RETURN_READ + Tags.PROTOCOL;
+			}else{
+				mail = Tags.EXECUTE_WRITE + Tags.PROTOCOL;
+			}
+			System.out.println("RS LIST SIZE: "+ rsList.size());
 			if(q == null)
 				System.out.println("WAANG LAMN");
 			switch(owner.getName()){
@@ -571,34 +638,33 @@ public class Controller implements Subject, QueryObserver
 	}
 	
 	@Override
-	public void notifyObservers() {
+	public void notifyObservers(String tranName) {
 		// TODO Auto-generated method stub
 		
 		if(rsList != null){
-			System.out.println("SIZE OF RES LIST: "+ rsList.size());
+			//System.out.println("SIZE OF RES LIST: "+ rsList.size());
 			for(Observer o: obList){
 			    System.out.println("UPDATING TABLE");
-	            o.update();
+	            o.update(tranName);
 	        }
 		}
-	  
 	}
 
 	@Override
-	public void update() {
+	public void update(String tranName) {
 		// TODO Auto-generated method stub
-		notifyObservers();
+		notifyObservers(tranName);
 	}
 
 	@Override
-	public void notifyQueryObservers(CachedRowSetImpl rs) {
+	public void notifyQueryObservers(String tranName, TableContents tc) {
 		// TODO Auto-generated method stub		
-		updateResultSet(rs);
+		updateResultSet(tranName, tc);
 	}
 
 	@Override
-	public void updateResultSet(CachedRowSetImpl rs) {
-		rsList.add(rs);
+	public void updateResultSet(String name, TableContents tc) {
+		rsList.replace(name, tc);
 	}
 	
 	public static Site searchForSite(String username){
@@ -619,7 +685,6 @@ public class Controller implements Subject, QueryObserver
 		}
 		
 		
-		System.out.println("CONSTRUCTED READ WUERY: "+ query);
 		return query;
 	}
 	
@@ -642,7 +707,8 @@ public class Controller implements Subject, QueryObserver
 					query += " AND " + q.getWHERE().get(index);
 		}
 		
-		System.out.println("CONSTRUCTED READ WUERY: "+ query);
 		return query;
 	}
+	
+	
 }
